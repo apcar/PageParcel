@@ -66,3 +66,18 @@ button:disabled {
   font-size: 13px;
   line-height: 1.5;
 }
+
+.advanced {
+  margin-top: 24px;
+  color: #b1bac4;
+}
+.advanced summary {
+  cursor: pointer;
+}
+.advanced label {
+  display: block;
+  margin-top: 12px;
+}
+.advanced [hidden] {
+  display: none;
+}

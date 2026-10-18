@@ -25,3 +25,7 @@ Any change to permissions, host access, CSP, networking, or data retention requi
 ## Local OCR constraints
 
 Unchecked by default and not persisted. Maximum eight visible image/canvas bitmaps, four million output pixels, and 45 seconds including worker initialization. It does not collect form fields, frames, shadow DOM, SVG, or CSS backgrounds. OCR reads graphics intersecting the current viewport (including their full intrinsic bitmap) and does not interpret maps or charts. OCR drafts use browser session memory (not persistent local storage); browser shutdown discards them, the next OCR capture prunes drafts older than five minutes, and the export page deletes its draft before recognition and discards image buffers afterward. The worker is terminated on timeout, failure, completion, or page exit. Captured pixels are not written to the language cache. Pinned package versions, exact bundled asset set, SHA-256 integrity, and the full CSP are checked by the audit.
+
+## Visible code in open components
+
+Page Text may read visible preformatted code from open shadow roots of visible hosts. It copies code text only, excludes hidden/editable elements, controls, scripts, and styles, and creates a plain pre element in the sanitized snapshot. It does not traverse general shadow content, closed roots, or embedded frames, and makes no network request. The capture metadata counts included component code blocks.

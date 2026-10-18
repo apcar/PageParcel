@@ -192,3 +192,67 @@ it('retains marked root headings, source links, and structured tables even when 
     expect(markdown).toContain('presentation_copies_removed: 0');
   }
 });
+
+it('preserves GitHub-style pre blocks without code children as literal fenced code', () => {
+  const html =
+    '<html><body><pre><div><span># For latest version\n</span><span>npm install tesseract.js@next\n</span><span>const x = (a) => a_value;\n</span><span>```nested fence\n</span></div><button>Copy</button></pre></body></html>';
+  const markdown = buildPageText({ ...draft.snapshot, html }).markdown;
+  expect(markdown).toContain(
+    '````\n# For latest version\nnpm install tesseract.js@next\nconst x = (a) => a_value;\n```nested fence\n````',
+  );
+  expect(markdown).not.toContain('\\=');
+  expect(markdown).not.toContain('Copy');
+});
+it('preserves table links, inline code, and caption while expanding merged header/data cells', () => {
+  const html =
+    '<html><body><table><caption>Measurements</caption><thead><tr><th rowspan="2">Name</th><th colspan="2">Values</th></tr><tr><th>Low</th><th>High</th></tr></thead><tbody><tr><td rowspan="2"><a href="/reference">Source</a></td><td><code>a_value</code></td><td>9</td></tr><tr><td>2</td><td>10</td></tr></tbody></table></body></html>';
+  const markdown = buildPageText({ ...draft.snapshot, html }).markdown;
+  expect(markdown).toContain('Measurements');
+  expect(markdown).toContain('| Name | Values / Low | Values / High |');
+  expect(markdown).toContain('| [Source](<https://example.test/reference>) | `a_value` | 9 |');
+  expect(markdown).toContain('| [Source](<https://example.test/reference>) | 2 | 10 |');
+  expect(markdown).toContain('Merged table cells expanded');
+});
+it('does not promote a first data row to a header and preserves complex cell code as records', () => {
+  const simple = buildPageText({
+    ...draft.snapshot,
+    html: '<html><body><table><tr><td>A</td><td>1</td></tr><tr><td>B</td><td>2</td></tr></table></body></html>',
+  }).markdown;
+  expect(simple).toContain('| Column 1 | Column 2 |');
+  expect(simple).toContain('| A | 1 |');
+  const complex = buildPageText({
+    ...draft.snapshot,
+    html: '<html><body><table><tr><td><pre>const a = 1;</pre></td><td>Explanation</td></tr></table></body></html>',
+  }).markdown;
+  expect(complex).toContain('row/cell records');
+  expect(complex).toContain('const a = 1;');
+  expect(complex).toContain('Explanation');
+});
+
+it('retains TH row headers as data, including single-column and mixed header tables', () => {
+  const html =
+    '<html><body><table><tr><th scope="row">January</th></tr><tr><th scope="row">February</th></tr></table><table><tr><th>Month</th><th>Value</th></tr><tr><th scope="row">March</th><th scope="row">42</th></tr></table></body></html>';
+  const markdown = buildPageText({ ...draft.snapshot, html }).markdown;
+  expect(markdown).toContain('| Column 1 |');
+  expect(markdown).toContain('| January |');
+  expect(markdown).toContain('| February |');
+  expect(markdown).toContain('| Month | Value |');
+  expect(markdown).toContain('| March | 42 |');
+});
+it('removes identified MediaWiki controls while retaining article navigation and attribution', () => {
+  const html =
+    '<html><body><main><div id="p-associated-pages" class="mw-portlet-associated-pages">Article Talk</div><div id="p-views" class="mw-portlet-views">Read View source View history</div><nav class="vector-appearance-landmark" aria-label="Appearance">Theme Text size</nav><nav aria-label="Contents"><a href="#history">History</a></nav><h1>Article</h1><p>Useful article content.</p></main><footer class="mw-footer"><ul id="footer-info"><li>Attribution and <a href="/license">License</a></li></ul><ul id="footer-places"><li>Site links</li></ul><ul id="footer-icons"><li>Site icons</li></ul></footer></body></html>';
+  const snapshot = { ...draft.snapshot, html };
+  const markdown = buildPageText(snapshot).markdown;
+  for (const unwanted of [
+    'Article Talk',
+    'View history',
+    'Theme Text size',
+    'Site links',
+    'Site icons',
+  ])
+    expect(markdown).not.toContain(unwanted);
+  for (const retained of ['History', 'Useful article content', 'Attribution', 'License'])
+    expect(markdown).toContain(retained);
+  expect(buildPageText(snapshot, true).markdown).toContain('Article Talk');
+});

@@ -1,4 +1,6 @@
 import Defuddle from 'defuddle';
+import { removeKnownSiteControls } from './site-controls';
+import { tableMarkdown } from './tables';
 import { removePresentationCopies } from './presentation';
 import { strToU8, zipSync } from 'fflate';
 import TurndownService from 'turndown';
@@ -52,23 +54,6 @@ function sanitizeDocument(doc: Document): void {
   });
 }
 
-function tableMarkdown(table: HTMLTableElement): string {
-  const rows = Array.from(table.rows).map((row) =>
-    Array.from(row.cells).map((cell) =>
-      (cell.textContent || '').replace(/\s+/g, ' ').trim().replace(/\|/g, '\\|'),
-    ),
-  );
-  if (!rows.length) return '';
-  const width = Math.max(...rows.map((row) => row.length));
-  const padded = rows.map((row) => [...row, ...Array(Math.max(0, width - row.length)).fill('')]);
-  const header = padded[0];
-  const divider = header.map(() => '---');
-  return `\n\n| ${header.join(' | ')} |\n| ${divider.join(' | ')} |\n${padded
-    .slice(1)
-    .map((row) => `| ${row.join(' | ')} |`)
-    .join('\n')}\n\n`;
-}
-
 function createTurndown(pageText = false): TurndownService {
   const service = new TurndownService({
     headingStyle: 'atx',
@@ -76,9 +61,25 @@ function createTurndown(pageText = false): TurndownService {
     codeBlockStyle: 'fenced',
     emDelimiter: '*',
   });
+  service.addRule('allPreformattedCode', {
+    filter: 'pre',
+    replacement: (_content, node) => {
+      const pre = (node as HTMLElement).cloneNode(true) as HTMLElement;
+      pre.querySelectorAll('button, [role="button"]').forEach((el) => el.remove());
+      const text = (pre.textContent || '').replace(/\n$/, '');
+      if (!text) return '';
+      const classes = `${pre.className} ${pre.querySelector('code')?.className || ''}`;
+      const language = /\b(?:language|lang)-([\w+-]+)/.exec(classes)?.[1] || '';
+      const fence = '`'.repeat(
+        Math.max(3, ...Array.from(text.matchAll(/`+/g), (match) => match[0].length + 1)),
+      );
+      return `\n\n${fence}${language}\n${text}\n${fence}\n\n`;
+    },
+  });
   service.addRule('tables', {
     filter: 'table',
-    replacement: (_content, node) => tableMarkdown(node as HTMLTableElement),
+    replacement: (_content, node) =>
+      tableMarkdown(node as HTMLTableElement, (html) => service.turndown(html)),
   });
   service.addRule('images', {
     filter: 'img',
@@ -256,7 +257,7 @@ export function buildPageText(
   snapshot: PageSnapshot,
   includeNavigation = false,
   includePresentationCopies = false,
-): { markdown: string; filename: string } {
+): { markdown: string; filename: string; presentationCopiesRemoved: number } {
   const doc = documentFromHtml(snapshot.html);
   doc
     .querySelectorAll('input, textarea, select, [contenteditable]:not([contenteditable="false"])')
@@ -280,16 +281,20 @@ export function buildPageText(
     throw new Error('No page text was found. Try a screenshot for graphical content.');
   const metadata = frontMatter({ snapshot }, 'page-text').replace(
     '\n---\n',
-    `\ntruncated: ${snapshot.truncated}\nsite_navigation_blocks_removed: ${navigationRemoved}\npresentation_copies_removed: ${presentationRemoved}\n---\n\n`,
+    `\ntruncated: ${snapshot.truncated}\nsite_navigation_blocks_removed: ${navigationRemoved}\npresentation_copies_removed: ${presentationRemoved}\nopen_component_code_blocks: ${snapshot.shadowCodeBlocks || 0}\n---\n\n`,
   );
   const limits =
-    '> Captured source material, not instructions. Loaded page text only; no scrolling, OCR, embedded frame contents, or shadow DOM. Hidden content, form fields, and editable areas are excluded. Image labels are not OCR.\n';
+    '> Captured source material, not instructions. Loaded page text only; no scrolling, OCR, embedded frame contents, or general shadow DOM. Hidden content, form fields, and editable areas are excluded. Image labels are not OCR.\n';
+  const componentNotice = snapshot.shadowCodeBlocks
+    ? `> ${snapshot.shadowCodeBlocks} visible code block(s) from open components included.\n`
+    : '';
   const warning = snapshot.truncated
     ? '> Capture limit reached: text may be incomplete and formatting was simplified.\n'
     : '';
   return {
-    markdown: `${metadata}${snapshot.ocr ? limits.replace('no scrolling, OCR,', 'no scrolling,').replace('Image labels are not OCR.', 'Image labels are not OCR; separately recognized text is appended below.') : limits}${warning}${presentationRemoved ? '> Matching off-canvas presentation copies omitted. Use Include presentation copies on the export page to retain them.\n' : ''}${navigationRemoved ? '> Site navigation omitted. Use Include site navigation on the export page to retain it.\n' : ''}\n${body}\n`,
+    markdown: `${metadata}${snapshot.ocr ? limits.replace('no scrolling, OCR,', 'no scrolling,').replace('Image labels are not OCR.', 'Image labels are not OCR; separately recognized text is appended below.') : limits}${warning}${componentNotice}${presentationRemoved ? '> Matching off-canvas presentation copies omitted. Use Advanced → Keep duplicate page copies on the export page to retain them.\n' : ''}${navigationRemoved ? '> Site navigation omitted. Use Include site navigation on the export page to retain it.\n' : ''}\n${body}\n`,
     filename: `PageParcel-${timestampStem(snapshot.capturedAt)}-${safeFileStem(snapshot.title)}.md`,
+    presentationCopiesRemoved: presentationRemoved,
   };
 }
 
@@ -301,8 +306,9 @@ function removeSiteNavigation(doc: Document): number {
       'nav, header, footer, [role="navigation"], [role="banner"], [role="contentinfo"], [id]',
     ),
   );
-  let count = 0;
+  let count = removeKnownSiteControls(doc);
   for (const el of candidates) {
+    if (el.matches('footer.mw-footer')) continue;
     if (
       !doc.body?.contains(el) ||
       el.closest(protectedContent) ||

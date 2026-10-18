@@ -2,6 +2,24 @@ import type { PageSnapshot, TileSpec } from '../shared/types';
 
 /** Capture a sanitized, non-executable representation of the current DOM. */
 export function collectPageSnapshot(textOnly = false): PageSnapshot {
+  const hiddenByClosedDetails = (node: HTMLElement): boolean => {
+    for (let parent = node.parentElement; parent; parent = parent.parentElement) {
+      if (parent.tagName === 'DETAILS' && !parent.hasAttribute('open')) {
+        const summary = Array.from(parent.children).find((child) => child.tagName === 'SUMMARY');
+        if (!summary?.contains(node)) return true;
+      }
+    }
+    return false;
+  };
+  const pruneClosedDetails = (root: HTMLElement) => {
+    root.querySelectorAll('details:not([open])').forEach((details) => {
+      const summary = Array.from(details.children).find((child) => child.tagName === 'SUMMARY');
+      Array.from(details.childNodes).forEach((child) => {
+        if (child !== summary) child.remove();
+      });
+    });
+  };
+  let shadowCodeBlocks = 0;
   const source = document.documentElement;
   const clone = source.cloneNode(true) as HTMLElement;
   const originals = Array.from(source.querySelectorAll<HTMLElement>('*'));
@@ -19,9 +37,7 @@ export function collectPageSnapshot(textOnly = false): PageSnapshot {
       (original.matches(
         'input, textarea, select, [contenteditable]:not([contenteditable="false"])',
       ) ||
-        (original.tagName !== 'DETAILS' &&
-          original.closest('details:not([open])') &&
-          !original.closest('summary')))
+        hiddenByClosedDetails(original))
     ) {
       copy.remove();
       continue;
@@ -30,6 +46,7 @@ export function collectPageSnapshot(textOnly = false): PageSnapshot {
     if (
       style.display === 'none' ||
       style.visibility === 'hidden' ||
+      style.opacity === '0' ||
       original.hidden ||
       original.getAttribute('aria-hidden') === 'true'
     ) {
@@ -87,12 +104,67 @@ export function collectPageSnapshot(textOnly = false): PageSnapshot {
       copy.open = original.open;
     }
 
+    // Visible code in open components is source text; do not traverse general shadow content.
+    if (textOnly && original.shadowRoot) {
+      for (const pre of Array.from(original.shadowRoot.querySelectorAll<HTMLElement>('pre'))) {
+        let visible = !hiddenByClosedDetails(pre);
+        for (let parent: HTMLElement | null = pre; parent; parent = parent.parentElement) {
+          const css = getComputedStyle(parent);
+          if (
+            css.display === 'none' ||
+            css.visibility === 'hidden' ||
+            css.opacity === '0' ||
+            parent.hidden ||
+            parent.getAttribute('aria-hidden') === 'true' ||
+            parent.matches(
+              'input, textarea, select, button, [contenteditable]:not([contenteditable="false"])',
+            )
+          )
+            visible = false;
+        }
+        if (!visible) continue;
+        const safe = pre.cloneNode(true) as HTMLElement;
+        const originals = Array.from(pre.querySelectorAll<HTMLElement>('*'));
+        const clones = Array.from(safe.querySelectorAll<HTMLElement>('*'));
+        for (let i = 0; i < originals.length; i++) {
+          const from = originals[i],
+            to = clones[i];
+          if (!safe.contains(to)) continue;
+          const css = getComputedStyle(from);
+          if (
+            css.display === 'none' ||
+            css.visibility === 'hidden' ||
+            css.opacity === '0' ||
+            from.hidden ||
+            from.getAttribute('aria-hidden') === 'true' ||
+            from.matches(
+              'script, style, input, textarea, select, button, [role="button"], [contenteditable]:not([contenteditable="false"])',
+            )
+          )
+            to.remove();
+        }
+        pruneClosedDetails(safe);
+        const text = safe.textContent || '';
+        if (!text.trim() || copy.textContent?.includes(text)) continue;
+        const block = document.createElement('pre');
+        block.textContent = text;
+        const language = /\b(?:language|lang)-([\w+-]+)/.exec(
+          `${pre.className} ${pre.querySelector('code')?.className || ''}`,
+        )?.[1];
+        if (language) block.className = `language-${language}`;
+        copy.append(block);
+        shadowCodeBlocks++;
+      }
+    }
+
     if (copy.tagName === 'IMG') {
       copy.removeAttribute('src');
       copy.removeAttribute('srcset');
       copy.removeAttribute('sizes');
     }
   }
+
+  if (textOnly) pruneClosedDetails(clone);
 
   clone
     .querySelectorAll('script, style, noscript, template, svg, object, embed')
@@ -131,6 +203,7 @@ export function collectPageSnapshot(textOnly = false): PageSnapshot {
   const description =
     document.querySelector<HTMLMetaElement>('meta[name="description"]')?.content || '';
   return {
+    shadowCodeBlocks,
     title: document.title || location.hostname || 'Untitled page',
     url: location.href,
     language: document.documentElement.lang || navigator.language || '',

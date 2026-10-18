@@ -67,6 +67,7 @@ export interface Metrics {
 }
 
 export interface PageSnapshot {
+  shadowCodeBlocks?: number;
   ocr?: OcrCapture;
   title: string;
   url: string;

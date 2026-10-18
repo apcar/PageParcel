@@ -1,4 +1,5 @@
 import './pack.css';
+import { setDuplicateOption } from './view';
 import { buildPageText } from './build';
 import { ocrMarkdown } from '../ocr/markdown';
 import type { PageSnapshot } from '../shared/types';
@@ -31,6 +32,7 @@ async function main(): Promise<void> {
     const includeCopies = document.querySelector<HTMLInputElement>('#include-presentation-copies')!;
     let result = buildPageText(snapshot);
     result.markdown += ocrText;
+    setDuplicateOption(result.presentationCopiesRemoved);
     let url = URL.createObjectURL(
       new Blob([result.markdown], { type: 'text/markdown;charset=utf-8' }),
     );

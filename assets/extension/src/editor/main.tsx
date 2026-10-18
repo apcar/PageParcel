@@ -1,17 +1,8 @@
 async function main(): Promise<void> {
   if (location.hash.startsWith('#text=')) {
     document.title = 'PageParcel Page Text';
-    document.body.innerHTML = `
-      <main>
-        <p class="eyebrow">PAGEPARCEL</p>
-        <h1>Page Text</h1>
-        <label><input id="include-navigation" type="checkbox"> Include site navigation</label>
-        <label><input id="include-presentation-copies" type="checkbox"> Include presentation copies</label>
-        <p id="details" class="details"></p>
-        <p id="status" role="status">Preparing Markdown…</p>
-        <button id="download" type="button" disabled>Download Markdown</button>
-        <p class="privacy">Loaded page text only. No scrolling. Optional OCR reads visible image regions locally; OCR may be inaccurate. Hidden content, form fields, editable areas, and embedded content are excluded. Nothing is uploaded.</p>
-      </main>`;
+    const { pageTextView } = await import('../pack/view');
+    document.body.innerHTML = pageTextView();
     await import('../pack/text');
     return;
   }

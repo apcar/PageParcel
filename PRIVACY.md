@@ -39,3 +39,5 @@ Material privacy changes will be documented in the changelog and reviewed as sec
 ## Optional local OCR
 
 Page Text OCR is off by default and is not a saved preference. It reads each eligible image or canvas’s own pixels without taking a screenshot or fetching its URL. Cross-origin-tainted graphics are skipped. Recognition uses bundled English language data and a local worker, with no remote OCR service. OCR drafts use browser session memory, are removed before recognition, and disappear on browser shutdown; the next OCR capture also prunes abandoned drafts older than five minutes. Recognized text is included in the downloaded Markdown as literal source text, and temporary image buffers are discarded when recognition finishes or fails. The image itself can contain private information, and OCR results can be inaccurate.
+
+Visible preformatted code in open web components can be included as plain source text. Hidden copies, closed details content, form/editable fields, controls, scripts, and styles are excluded from that extraction. General shadow content, closed roots, and embedded frames remain outside this capture.
