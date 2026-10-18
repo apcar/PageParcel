@@ -71,6 +71,7 @@ export function App() {
   const [settings, setSettingsState] = useState<Settings>(DEFAULT_SETTINGS);
   const [showWelcome, setShowWelcome] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [ocr, setOcr] = useState(false);
   const [busy, setBusy] = useState<CaptureMode | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -136,11 +137,13 @@ export function App() {
       return;
     }
     setProgress(0);
-    sendToBackground({ type: 'CAPTURE_REQUEST', mode }).catch(() => {
-      setBusy(null);
-      setProgress(null);
-      pushToast(t('couldNotReach'), 'error');
-    });
+    sendToBackground({ type: 'CAPTURE_REQUEST', mode, ocr: mode === 'page-text' && ocr }).catch(
+      () => {
+        setBusy(null);
+        setProgress(null);
+        pushToast(t('couldNotReach'), 'error');
+      },
+    );
   }
 
   async function dismissWelcome() {
@@ -192,37 +195,52 @@ export function App() {
             {MODES.map((m) => {
               const isBusy = busy === m.id;
               return (
-                <button
-                  key={m.id}
-                  class="mode-card"
-                  data-busy={isBusy ? 'true' : undefined}
-                  disabled={!!busy}
-                  onClick={() => capture(m.id)}
-                >
-                  <span class="mode-icon" aria-hidden="true">
-                    {m.icon}
-                  </span>
-                  <span class="mode-text">
-                    <span class="mode-title">{t(m.titleKey)}</span>
-                    <span class="mode-sub">
-                      {isBusy
-                        ? (m.id === 'full-page' || m.id === 'pack') && progress != null
-                          ? t('capturing') + ' ' + progress + '%'
-                          : t('capturing')
-                        : t(m.subtitleKey)}
+                <div key={m.id}>
+                  <button
+                    class="mode-card"
+                    data-busy={isBusy ? 'true' : undefined}
+                    disabled={!!busy}
+                    onClick={() => capture(m.id)}
+                  >
+                    <span class="mode-icon" aria-hidden="true">
+                      {m.icon}
                     </span>
-                  </span>
-                  {isBusy ? (
-                    <span class="spinner" aria-label={t('capturing')} />
-                  ) : shortcuts[m.command] ? (
-                    <kbd>{shortcuts[m.command]}</kbd>
-                  ) : null}
-                  {isBusy && (m.id === 'full-page' || m.id === 'pack') && progress != null ? (
-                    <div class="progress" aria-hidden="true">
-                      <div class="progress-fill" style={{ width: `${progress}%` }} />
-                    </div>
-                  ) : null}
-                </button>
+                    <span class="mode-text">
+                      <span class="mode-title">{t(m.titleKey)}</span>
+                      <span class="mode-sub">
+                        {isBusy
+                          ? (m.id === 'full-page' || m.id === 'pack') && progress != null
+                            ? t('capturing') + ' ' + progress + '%'
+                            : t('capturing')
+                          : t(m.subtitleKey)}
+                      </span>
+                    </span>
+                    {isBusy ? (
+                      <span class="spinner" aria-label={t('capturing')} />
+                    ) : shortcuts[m.command] ? (
+                      <kbd>{shortcuts[m.command]}</kbd>
+                    ) : null}
+                    {isBusy && (m.id === 'full-page' || m.id === 'pack') && progress != null ? (
+                      <div class="progress" aria-hidden="true">
+                        <div class="progress-fill" style={{ width: `${progress}%` }} />
+                      </div>
+                    ) : null}
+                  </button>
+                  {m.id === 'page-text' && (
+                    <label class="ocr-option">
+                      <input
+                        type="checkbox"
+                        checked={ocr}
+                        disabled={!!busy}
+                        onChange={(e) => setOcr(e.currentTarget.checked)}
+                      />
+                      <span>
+                        OCR visible images — local
+                        <small>English · current screen only · slower</small>
+                      </span>
+                    </label>
+                  )}
+                </div>
               );
             })}
           </nav>

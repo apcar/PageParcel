@@ -266,7 +266,8 @@ export function buildPageText(
   const body = createTurndown(true)
     .turndown(doc.body?.innerHTML || '')
     .trim();
-  if (!body) throw new Error('No page text was found. Try a screenshot for graphical content.');
+  if (!body && !snapshot.ocr)
+    throw new Error('No page text was found. Try a screenshot for graphical content.');
   const metadata = frontMatter({ snapshot }, 'page-text').replace(
     '\n---\n',
     `\ntruncated: ${snapshot.truncated}\nsite_navigation_blocks_removed: ${navigationRemoved}\n---\n\n`,
@@ -277,7 +278,7 @@ export function buildPageText(
     ? '> Capture limit reached: text may be incomplete and formatting was simplified.\n'
     : '';
   return {
-    markdown: `${metadata}${limits}${warning}${navigationRemoved ? '> Site navigation omitted. Use Include site navigation on the export page to retain it.\n' : ''}\n${body}\n`,
+    markdown: `${metadata}${snapshot.ocr ? limits.replace('no scrolling, OCR,', 'no scrolling,').replace('Image labels are not OCR.', 'Image labels are not OCR; separately recognized text is appended below.') : limits}${warning}${navigationRemoved ? '> Site navigation omitted. Use Include site navigation on the export page to retain it.\n' : ''}\n${body}\n`,
     filename: `PageParcel-${timestampStem(snapshot.capturedAt)}-${safeFileStem(snapshot.title)}.md`,
   };
 }

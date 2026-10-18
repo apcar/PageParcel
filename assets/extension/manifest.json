@@ -25,7 +25,7 @@
   "permissions": ["activeTab", "scripting", "storage", "unlimitedStorage", "downloads"],
   "host_permissions": [],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'none'; connect-src 'self'; img-src 'self' data: blob:; media-src 'none'; frame-src 'none';"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; object-src 'none'; connect-src 'self'; img-src 'self' data: blob:; media-src 'none'; frame-src 'none';"
   },
   "options_ui": {
     "page": "src/editor/index.html",

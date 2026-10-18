@@ -30,8 +30,33 @@ def main() -> int:
     for required in ("script-src 'self'", "connect-src 'self'", "object-src 'none'", "frame-src 'none'"):
         if required not in csp:
             errors.append(f"CSP missing {required}")
-    if "unsafe-eval" in csp or "unsafe-inline" in csp:
+    if "'unsafe-eval'" in csp or "'unsafe-inline'" in csp:
         errors.append("CSP contains an unsafe script allowance")
+
+    # Explicit local-OCR CSP: only packaged WASM is newly permitted; no general eval/CDN.
+    expected_csp = "script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; object-src 'none'; connect-src 'self'; img-src 'self' data: blob:; media-src 'none'; frame-src 'none';"
+    if csp != expected_csp:
+        errors.append("CSP differs from reviewed local-OCR policy")
+    import hashlib
+    ocr_root = root / "public/ocr"
+    asset_manifest = ocr_root / "assets.json"
+    if not asset_manifest.exists():
+        errors.append("Bundled OCR assets missing: run npm run ocr:bundle")
+    else:
+        hashes = json.loads(asset_manifest.read_text())
+        expected = {"worker.min.js", "LICENSE-tesseract.txt", "LICENSE-core.txt", "eng.traineddata.gz", "tesseract-core-lstm.wasm.js", "tesseract-core-simd-lstm.wasm.js", "tesseract-core-relaxedsimd-lstm.wasm.js"}
+        if set(hashes) != expected:
+            errors.append("Unexpected OCR asset set")
+        for name, digest in hashes.items():
+            if name not in expected:
+                continue
+            asset = ocr_root / name
+            if not asset.exists() or hashlib.sha256(asset.read_bytes()).hexdigest() != digest:
+                errors.append(f"OCR asset hash mismatch: {name}")
+        lock = json.loads((root / "package-lock.json").read_text())["packages"]
+        for package, version in (("tesseract.js", "7.0.0"), ("@tesseract.js-data/eng", "1.0.0")):
+            if lock.get(f"node_modules/{package}", {}).get("version") != version:
+                errors.append(f"Unreviewed OCR dependency version: {package}")
 
     source_root = root / "src"
     for path in source_root.rglob("*"):

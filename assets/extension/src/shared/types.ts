@@ -8,9 +8,12 @@ export type CaptureMode = 'pack' | 'page-text' | 'full-page' | 'visible' | 'regi
 
 // --- Popup → Background (capture requests) -------------------------------
 
+import type { OcrCapture } from '../ocr/types';
+
 export interface CaptureRequest {
   type: 'CAPTURE_REQUEST';
   mode: CaptureMode;
+  ocr?: boolean;
 }
 
 export type BackgroundMessage = CaptureRequest;
@@ -64,6 +67,7 @@ export interface Metrics {
 }
 
 export interface PageSnapshot {
+  ocr?: OcrCapture;
   title: string;
   url: string;
   language: string;

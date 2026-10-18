@@ -4,3 +4,5 @@ assets/extension/dist/
 release/
 PageParcel-*.zip
 npm-debug.log*
+
+assets/extension/public/ocr/

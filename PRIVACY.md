@@ -35,3 +35,7 @@ Review a page before capturing it. Treat downloaded output according to the sens
 ## Changes and questions
 
 Material privacy changes will be documented in the changelog and reviewed as security-sensitive changes. Questions may be opened as a GitHub issue. Potential vulnerabilities should be submitted through GitHub's private vulnerability reporting rather than a public issue.
+
+## Optional local OCR
+
+Page Text OCR is off by default and is not a saved preference. It reads each eligible image or canvas’s own pixels without taking a screenshot or fetching its URL. Cross-origin-tainted graphics are skipped. Recognition uses bundled English language data and a local worker, with no remote OCR service. OCR drafts use browser session memory, are removed before recognition, and disappear on browser shutdown; the next OCR capture also prunes abandoned drafts older than five minutes. Recognized text is included in the downloaded Markdown as literal source text, and temporary image buffers are discarded when recognition finishes or fails. The image itself can contain private information, and OCR results can be inaccurate.

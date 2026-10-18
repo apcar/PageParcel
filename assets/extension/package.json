@@ -29,13 +29,16 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "build": "npm run icons && tsc --noEmit && vite build",
-    "package": "npm run build"
+    "build": "npm run icons && npm run ocr:bundle && tsc --noEmit && vite build",
+    "package": "npm run build",
+    "ocr:bundle": "node scripts/bundle-ocr.mjs"
   },
   "dependencies": {
+    "@tesseract.js-data/eng": "1.0.0",
     "defuddle": "0.19.1",
     "fflate": "0.8.3",
     "preact": "^10.29.7",
+    "tesseract.js": "7.0.0",
     "turndown": "7.2.4"
   },
   "devDependencies": {

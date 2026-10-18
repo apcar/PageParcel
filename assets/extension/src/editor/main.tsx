@@ -9,7 +9,7 @@ async function main(): Promise<void> {
         <p id="details" class="details"></p>
         <p id="status" role="status">Preparing Markdown…</p>
         <button id="download" type="button" disabled>Download Markdown</button>
-        <p class="privacy">Loaded page text only. No scrolling, screenshots, or OCR. Hidden content, form fields, editable areas, and embedded content are excluded. Nothing is uploaded.</p>
+        <p class="privacy">Loaded page text only. No scrolling. Optional OCR reads visible image regions locally; OCR may be inaccurate. Hidden content, form fields, editable areas, and embedded content are excluded. Nothing is uploaded.</p>
       </main>`;
     await import('../pack/text');
     return;

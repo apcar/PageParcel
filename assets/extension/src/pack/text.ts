@@ -1,5 +1,6 @@
 import './pack.css';
 import { buildPageText } from './build';
+import { ocrMarkdown } from '../ocr/markdown';
 import type { PageSnapshot } from '../shared/types';
 
 async function main(): Promise<void> {
@@ -12,16 +13,29 @@ async function main(): Promise<void> {
     return;
   }
   try {
-    const stored = await chrome.storage.local.get(key);
+    const stored = {
+      ...(await chrome.storage.local.get(key)),
+      ...(await chrome.storage.session.get(key)),
+    };
     const snapshot = stored[key] as PageSnapshot | undefined;
     if (!snapshot) throw new Error('No pending page text. Start a new capture from PageParcel.');
+    await Promise.all([chrome.storage.local.remove(key), chrome.storage.session.remove(key)]);
+    if (snapshot.ocr) {
+      const { recognizeImages } = await import('../ocr/recognize');
+      await recognizeImages(snapshot.ocr, (message) => {
+        status.textContent = message;
+      });
+    }
+    const ocrText = snapshot.ocr ? ocrMarkdown(snapshot.ocr) : '';
     const includeNavigation = document.querySelector<HTMLInputElement>('#include-navigation')!;
     let result = buildPageText(snapshot);
+    result.markdown += ocrText;
     let url = URL.createObjectURL(
       new Blob([result.markdown], { type: 'text/markdown;charset=utf-8' }),
     );
     includeNavigation.addEventListener('change', () => {
       result = buildPageText(snapshot, includeNavigation.checked);
+      result.markdown += ocrText;
       URL.revokeObjectURL(url);
       url = URL.createObjectURL(
         new Blob([result.markdown], { type: 'text/markdown;charset=utf-8' }),
@@ -42,12 +56,12 @@ async function main(): Promise<void> {
     };
     button.addEventListener('click', () => void download());
     details.textContent = `${snapshot.title}\n${snapshot.url}`;
-    await chrome.storage.local.remove(key);
+    await Promise.all([chrome.storage.local.remove(key), chrome.storage.session.remove(key)]);
     await download();
   } catch (error) {
     status.textContent = error instanceof Error ? error.message : 'Could not prepare Page Text.';
     status.dataset.error = 'true';
-    await chrome.storage.local.remove(key);
+    await Promise.all([chrome.storage.local.remove(key), chrome.storage.session.remove(key)]);
   }
 }
 void main();
