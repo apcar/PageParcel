@@ -194,5 +194,11 @@
   "captureModesAria": {
     "message": "Capture modes",
     "description": "Accessible label for the capture mode buttons."
+  },
+  "modePageText": {
+    "message": "Page Text"
+  },
+  "modePageTextSub": {
+    "message": "Save page text as Markdown"
   }
 }

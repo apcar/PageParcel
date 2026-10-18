@@ -1,4 +1,18 @@
 async function main(): Promise<void> {
+  if (location.hash.startsWith('#text=')) {
+    document.title = 'PageParcel Page Text';
+    document.body.innerHTML = `
+      <main>
+        <p class="eyebrow">PAGEPARCEL</p>
+        <h1>Page Text</h1>
+        <p id="details" class="details"></p>
+        <p id="status" role="status">Preparing Markdown…</p>
+        <button id="download" type="button" disabled>Download Markdown</button>
+        <p class="privacy">Loaded page text only. No scrolling, screenshots, or OCR. Hidden content, form fields, editable areas, and embedded content are excluded. Nothing is uploaded.</p>
+      </main>`;
+    await import('../pack/text');
+    return;
+  }
   if (location.hash === '#pack') {
     document.title = 'PageParcel Trace Bundle';
     document.body.innerHTML = `

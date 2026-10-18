@@ -65,6 +65,9 @@
         "mac": "Command+Shift+R"
       },
       "description": "Capture a selected region"
+    },
+    "capture-page-text": {
+      "description": "Save page text as Markdown"
     }
   }
 }

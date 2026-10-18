@@ -4,7 +4,7 @@
  */
 
 /** Capture modes offered in the popup. */
-export type CaptureMode = 'pack' | 'full-page' | 'visible' | 'region';
+export type CaptureMode = 'pack' | 'page-text' | 'full-page' | 'visible' | 'region';
 
 // --- Popup → Background (capture requests) -------------------------------
 
@@ -44,7 +44,8 @@ export interface CaptureError {
   message: string;
 }
 
-export type PopupMessage = CaptureProgress | CaptureComplete | PackComplete | CaptureError;
+export type PopupMessage =
+  CaptureProgress | CaptureComplete | PackComplete | { type: 'TEXT_COMPLETE' } | CaptureError;
 
 // --- Capture geometry (in-page measurement results) -----------------------
 

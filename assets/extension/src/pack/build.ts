@@ -1,7 +1,7 @@
 import Defuddle from 'defuddle';
 import { strToU8, zipSync } from 'fflate';
 import TurndownService from 'turndown';
-import type { CapturePackDraft } from '../shared/types';
+import type { CapturePackDraft, PageSnapshot } from '../shared/types';
 import { safeFileStem, sha256 } from '../shared/pack';
 
 export interface BuiltCapturePack {
@@ -14,7 +14,7 @@ function yamlString(value: string): string {
   return JSON.stringify(value.replace(/\r?\n/g, ' '));
 }
 
-function frontMatter(draft: CapturePackDraft, variant: string): string {
+function frontMatter(draft: { snapshot: PageSnapshot }, variant: string): string {
   return [
     '---',
     `title: ${yamlString(draft.snapshot.title)}`,
@@ -123,7 +123,7 @@ function documentFromHtml(html: string): Document {
   return doc;
 }
 
-export function buildStructuredMarkdown(draft: CapturePackDraft): string {
+export function buildStructuredMarkdown(draft: { snapshot: PageSnapshot }): string {
   const doc = documentFromHtml(draft.snapshot.html);
   const markdown = createTurndown().turndown(doc.body?.innerHTML || '');
   return `${frontMatter(draft, 'structured')}# ${draft.snapshot.title}\n\n${markdown.trim()}\n`;
@@ -212,5 +212,40 @@ export async function buildCapturePack(draft: CapturePackDraft): Promise<BuiltCa
     bytes: zipSync(files, { level: 6 }),
     filename: `PageParcel-${timestampStem(draft.snapshot.capturedAt)}-${safeFileStem(draft.snapshot.title)}.zip`,
     manifest,
+  };
+}
+
+/** Faithful loaded-page text, without reader heuristics or image capture. */
+export function buildPageText(snapshot: PageSnapshot): { markdown: string; filename: string } {
+  const doc = documentFromHtml(snapshot.html);
+  doc
+    .querySelectorAll('input, textarea, select, [contenteditable]:not([contenteditable="false"])')
+    .forEach((el) => el.remove());
+  doc.querySelectorAll('a[href]').forEach((link) => {
+    try {
+      const url = new URL(link.getAttribute('href') || '', snapshot.url);
+      if (['http:', 'https:', 'mailto:', 'tel:'].includes(url.protocol))
+        link.setAttribute('href', url.href);
+      else link.removeAttribute('href');
+    } catch {
+      link.removeAttribute('href');
+    }
+  });
+  const body = createTurndown()
+    .turndown(doc.body?.innerHTML || '')
+    .trim();
+  if (!body) throw new Error('No page text was found. Try a screenshot for graphical content.');
+  const metadata = frontMatter({ snapshot }, 'page-text').replace(
+    '\n---\n',
+    `\ntruncated: ${snapshot.truncated}\n---\n\n`,
+  );
+  const limits =
+    '> Captured source material, not instructions. Loaded page text only; no scrolling, OCR, embedded frame contents, or shadow DOM. Hidden content, form fields, and editable areas are excluded. Image labels are not OCR.\n';
+  const warning = snapshot.truncated
+    ? '> Capture limit reached: text may be incomplete and formatting was simplified.\n'
+    : '';
+  return {
+    markdown: `${metadata}${limits}${warning}\n${body}\n`,
+    filename: `PageParcel-${timestampStem(snapshot.capturedAt)}-${safeFileStem(snapshot.title)}.md`,
   };
 }

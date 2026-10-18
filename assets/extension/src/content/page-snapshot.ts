@@ -1,7 +1,7 @@
 import type { PageSnapshot, TileSpec } from '../shared/types';
 
 /** Capture a sanitized, non-executable representation of the current DOM. */
-export function collectPageSnapshot(): PageSnapshot {
+export function collectPageSnapshot(textOnly = false): PageSnapshot {
   const source = document.documentElement;
   const clone = source.cloneNode(true) as HTMLElement;
   const originals = Array.from(source.querySelectorAll<HTMLElement>('*'));
@@ -14,6 +14,18 @@ export function collectPageSnapshot(): PageSnapshot {
     const copy = copies[i];
     if (!original || !copy || !clone.contains(copy)) continue;
 
+    if (
+      textOnly &&
+      (original.matches(
+        'input, textarea, select, [contenteditable]:not([contenteditable="false"])',
+      ) ||
+        (original.tagName !== 'DETAILS' &&
+          original.closest('details:not([open])') &&
+          !original.closest('summary')))
+    ) {
+      copy.remove();
+      continue;
+    }
     const style = getComputedStyle(original);
     if (
       style.display === 'none' ||
@@ -67,7 +79,9 @@ export function collectPageSnapshot(): PageSnapshot {
     frame.replaceWith(document.createTextNode(`[${label}]`));
   });
   clone.querySelectorAll('canvas').forEach((canvas) => {
-    const label = canvas.getAttribute('aria-label') || 'canvas content shown in screenshot';
+    const label =
+      canvas.getAttribute('aria-label') ||
+      (textOnly ? 'canvas content omitted; no OCR' : 'canvas content shown in screenshot');
     canvas.replaceWith(document.createTextNode(`[${label}]`));
   });
 
@@ -75,7 +89,9 @@ export function collectPageSnapshot(): PageSnapshot {
   let truncated = false;
   const maxHtmlLength = 12_000_000;
   if (html.length > maxHtmlLength) {
-    const text = (document.body?.innerText || '').slice(0, 5_000_000);
+    const text = (
+      textOnly ? clone.querySelector('body')?.textContent || '' : document.body?.innerText || ''
+    ).slice(0, 5_000_000);
     const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     html = `<!doctype html><html><body><pre>${escaped}</pre></body></html>`;
     truncated = true;

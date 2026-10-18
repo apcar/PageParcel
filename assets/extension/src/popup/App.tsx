@@ -38,6 +38,13 @@ const MODES: ModeDef[] = [
     subtitleKey: 'modePackSub',
   },
   {
+    id: 'page-text',
+    icon: '📝',
+    command: 'capture-page-text',
+    titleKey: 'modePageText',
+    subtitleKey: 'modePageTextSub',
+  },
+  {
     id: 'full-page',
     icon: '📄',
     command: 'capture-full-page',
@@ -90,6 +97,7 @@ export function App() {
       switch (msg.type) {
         case 'CAPTURE_COMPLETE':
         case 'PACK_COMPLETE':
+        case 'TEXT_COMPLETE':
           setBusy(null);
           setProgress(null);
           window.close();

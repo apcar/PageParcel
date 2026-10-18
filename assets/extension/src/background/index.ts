@@ -64,11 +64,14 @@ async function handleCapture(mode: CaptureMode): Promise<void> {
     broadcast({
       type: 'CAPTURE_ERROR',
       code: 'protected-page',
-      message: "Can't screenshot this protected page.",
+      message: "Can't capture this protected page.",
     });
     return;
   }
   switch (mode) {
+    case 'page-text':
+      await capturePageText(tab);
+      return;
     case 'pack':
       await capturePack(tab);
       return;
@@ -222,6 +225,19 @@ async function captureFullPage(tab: chrome.tabs.Tab): Promise<void> {
   });
 }
 
+async function capturePageText(tab: chrome.tabs.Tab): Promise<void> {
+  const snapshot = await execInTab(tab.id as number, collectPageSnapshot, [true]);
+  const key = `pageparcel:text:${crypto.randomUUID()}`;
+  await chrome.storage.local.set({ [key]: snapshot });
+  try {
+    await chrome.tabs.create({ url: `${EDITOR_URL}#text=${encodeURIComponent(key)}` });
+  } catch (error) {
+    await chrome.storage.local.remove(key);
+    throw error;
+  }
+  broadcast({ type: 'TEXT_COMPLETE' });
+}
+
 async function capturePack(tab: chrome.tabs.Tab): Promise<void> {
   const tabId = tab.id as number;
   const metrics = await execInTab(tabId, getMetrics, []);
@@ -334,6 +350,8 @@ async function handoffToEditor(
 
 function commandToMode(command: string): CaptureMode | null {
   switch (command) {
+    case 'capture-page-text':
+      return 'page-text';
     case 'capture-trace-bundle':
       return 'pack';
     case 'capture-full-page':

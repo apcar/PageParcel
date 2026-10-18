@@ -33,20 +33,35 @@
   },
   "commands": {
     "capture-trace-bundle": {
-      "suggested_key": { "default": "Ctrl+Shift+E", "mac": "Command+Shift+E" },
+      "suggested_key": {
+        "default": "Ctrl+Shift+E",
+        "mac": "Command+Shift+E"
+      },
       "description": "Create a local PageParcel Trace Bundle"
     },
     "capture-full-page": {
-      "suggested_key": { "default": "Ctrl+Shift+S", "mac": "Command+Shift+S" },
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
       "description": "Capture the full scrolling page"
     },
     "capture-visible": {
-      "suggested_key": { "default": "Alt+Shift+V", "mac": "Command+Shift+V" },
+      "suggested_key": {
+        "default": "Alt+Shift+V",
+        "mac": "Command+Shift+V"
+      },
       "description": "Capture the visible area"
     },
     "capture-region": {
-      "suggested_key": { "default": "Ctrl+Shift+R", "mac": "Command+Shift+R" },
+      "suggested_key": {
+        "default": "Ctrl+Shift+R",
+        "mac": "Command+Shift+R"
+      },
       "description": "Capture a selected region"
+    },
+    "capture-page-text": {
+      "description": "Save page text as Markdown"
     }
   }
 }
