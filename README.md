@@ -8,7 +8,7 @@
 
 PageParcel is a local-first Chrome extension that captures the visual page and its useful structure together. One click creates a Trace Bundle with lossless screenshots, structured Markdown, reader Markdown, source metadata, and SHA-256 integrity hashes. Nothing is uploaded by the extension.
 
-**Page Text** saves loaded page content directly as one Markdown file, with its title, URL, capture time, and scope. It preserves headings, links, lists, code, and simple tables without scrolling or taking screenshots. Hidden content, form fields, editable areas, embedded frames, and shadow DOM are excluded. Image labels are preserved, but image text is not recognized; OCR is not included. Unloaded or virtualized content is not fetched. Large captures include a truncation notice.
+**Page Text** saves loaded page content directly as one Markdown file, with its title, URL, capture time, and scope. It preserves headings, links, lists, code, and simple tables without scrolling or taking screenshots. Clearly identified, link-heavy site navigation outside the page content is omitted by default; check **Include site navigation** on the export page and download again to retain it. Page-local navigation, captions, and uncertain containers remain. Hidden content, form fields, editable areas, embedded frames, and shadow DOM are excluded. Image labels are preserved, but image text is not recognized; OCR is not included. Unloaded or virtualized content is not fetched. Large captures include a truncation notice.
 
 It also handles the everyday screenshot work: full-page, visible-area, and region capture; annotation; clipboard copy; and PNG, JPEG, WebP, or PDF export.
 

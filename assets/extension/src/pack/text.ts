@@ -15,10 +15,19 @@ async function main(): Promise<void> {
     const stored = await chrome.storage.local.get(key);
     const snapshot = stored[key] as PageSnapshot | undefined;
     if (!snapshot) throw new Error('No pending page text. Start a new capture from PageParcel.');
-    const result = buildPageText(snapshot);
-    const url = URL.createObjectURL(
+    const includeNavigation = document.querySelector<HTMLInputElement>('#include-navigation')!;
+    let result = buildPageText(snapshot);
+    let url = URL.createObjectURL(
       new Blob([result.markdown], { type: 'text/markdown;charset=utf-8' }),
     );
+    includeNavigation.addEventListener('change', () => {
+      result = buildPageText(snapshot, includeNavigation.checked);
+      URL.revokeObjectURL(url);
+      url = URL.createObjectURL(
+        new Blob([result.markdown], { type: 'text/markdown;charset=utf-8' }),
+      );
+      status.textContent = 'Options changed. Download Markdown to save this version.';
+    });
     window.addEventListener('pagehide', () => URL.revokeObjectURL(url), { once: true });
     button.disabled = false;
     const download = async () => {

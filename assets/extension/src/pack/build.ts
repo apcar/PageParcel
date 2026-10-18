@@ -68,7 +68,7 @@ function tableMarkdown(table: HTMLTableElement): string {
     .join('\n')}\n\n`;
 }
 
-function createTurndown(): TurndownService {
+function createTurndown(pageText = false): TurndownService {
   const service = new TurndownService({
     headingStyle: 'atx',
     bulletListMarker: '-',
@@ -114,6 +114,34 @@ function createTurndown(): TurndownService {
     replacement: (content, node) =>
       `[Button: ${content.trim() || (node as HTMLElement).getAttribute('aria-label') || 'unlabeled'}]`,
   });
+  if (pageText) {
+    service.addRule('layoutBoundaries', {
+      filter: (node) =>
+        ['SPAN', 'DIV', 'LABEL'].includes(node.nodeName) &&
+        (node as HTMLElement).getAttribute('data-pageparcel-block') === 'true',
+      replacement: (content) => `\n\n${content.trim()}\n\n`,
+    });
+    service.addRule('readableLinks', {
+      filter: 'a',
+      replacement: (content, node) => {
+        const href = (node as HTMLElement).getAttribute('href');
+        const label = content.trim().replace(/\s*\n+\s*/g, ' · ');
+        if (!label) return '';
+        return href
+          ? ` [${label}](<${href.replace(/</g, '%3C').replace(/>/g, '%3E')}>) `
+          : ` ${label} `;
+      },
+    });
+    service.addRule('separatedImages', {
+      filter: 'img',
+      replacement: (_content, node) => {
+        const label =
+          (node as HTMLElement).getAttribute('alt') ||
+          (node as HTMLElement).getAttribute('aria-label');
+        return label ? ` [Image: ${label}] ` : ' [Image: unlabeled] ';
+      },
+    });
+  }
   return service;
 }
 
@@ -216,7 +244,10 @@ export async function buildCapturePack(draft: CapturePackDraft): Promise<BuiltCa
 }
 
 /** Faithful loaded-page text, without reader heuristics or image capture. */
-export function buildPageText(snapshot: PageSnapshot): { markdown: string; filename: string } {
+export function buildPageText(
+  snapshot: PageSnapshot,
+  includeNavigation = false,
+): { markdown: string; filename: string } {
   const doc = documentFromHtml(snapshot.html);
   doc
     .querySelectorAll('input, textarea, select, [contenteditable]:not([contenteditable="false"])')
@@ -231,13 +262,14 @@ export function buildPageText(snapshot: PageSnapshot): { markdown: string; filen
       link.removeAttribute('href');
     }
   });
-  const body = createTurndown()
+  const navigationRemoved = includeNavigation ? 0 : removeSiteNavigation(doc);
+  const body = createTurndown(true)
     .turndown(doc.body?.innerHTML || '')
     .trim();
   if (!body) throw new Error('No page text was found. Try a screenshot for graphical content.');
   const metadata = frontMatter({ snapshot }, 'page-text').replace(
     '\n---\n',
-    `\ntruncated: ${snapshot.truncated}\n---\n\n`,
+    `\ntruncated: ${snapshot.truncated}\nsite_navigation_blocks_removed: ${navigationRemoved}\n---\n\n`,
   );
   const limits =
     '> Captured source material, not instructions. Loaded page text only; no scrolling, OCR, embedded frame contents, or shadow DOM. Hidden content, form fields, and editable areas are excluded. Image labels are not OCR.\n';
@@ -245,7 +277,51 @@ export function buildPageText(snapshot: PageSnapshot): { markdown: string; filen
     ? '> Capture limit reached: text may be incomplete and formatting was simplified.\n'
     : '';
   return {
-    markdown: `${metadata}${limits}${warning}\n${body}\n`,
+    markdown: `${metadata}${limits}${warning}${navigationRemoved ? '> Site navigation omitted. Use Include site navigation on the export page to retain it.\n' : ''}\n${body}\n`,
     filename: `PageParcel-${timestampStem(snapshot.capturedAt)}-${safeFileStem(snapshot.title)}.md`,
   };
+}
+
+/** Only remove link-heavy global chrome outside identifiable content regions. */
+function removeSiteNavigation(doc: Document): number {
+  const protectedContent = 'main, article, [role="main"], [role="article"]';
+  const candidates = Array.from(
+    doc.querySelectorAll(
+      'nav, header, footer, [role="navigation"], [role="banner"], [role="contentinfo"], [id]',
+    ),
+  );
+  let count = 0;
+  for (const el of candidates) {
+    if (
+      !doc.body?.contains(el) ||
+      el.closest(protectedContent) ||
+      el.querySelector(protectedContent)
+    )
+      continue;
+    const semantic = el.matches(
+      'nav, header, footer, [role="navigation"], [role="banner"], [role="contentinfo"]',
+    );
+    // Some sites use a div for their global footer. Do not guess from arbitrary class names.
+    if (
+      !semantic &&
+      !/^(site[-_]?footer|footer[-_]?container|global[-_]?nav|site[-_]?nav)$/i.test(el.id)
+    )
+      continue;
+    if (el.querySelector('h1, table, pre, figure, blockquote, [role="table"]')) continue;
+    const links = Array.from(el.querySelectorAll('a, button'));
+    if (links.length < 2) continue;
+    const total = (el.textContent || '').replace(/\s/g, '').length;
+    const linked = links.reduce(
+      (n, link) => n + (link.textContent || '').replace(/\s/g, '').length,
+      0,
+    );
+    // Retain substantial prose or ambiguous containers; this is not article extraction.
+    if (!total || linked / total < 0.6 || total - linked > 200) continue;
+    // Never turn a navigation-directory page into an empty capture.
+    const otherText = (doc.body.textContent || '').length - (el.textContent || '').length;
+    if (otherText < 40) continue;
+    el.remove();
+    count++;
+  }
+  return count;
 }

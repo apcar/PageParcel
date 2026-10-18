@@ -37,6 +37,20 @@ export function collectPageSnapshot(textOnly = false): PageSnapshot {
       continue;
     }
 
+    // Preserve CSS layout boundaries that disappear when styles are removed.
+    copy.removeAttribute('data-pageparcel-block');
+    if (textOnly) {
+      const parentDisplay = original.parentElement
+        ? getComputedStyle(original.parentElement).display
+        : '';
+      if (
+        ['block', 'flex', 'grid', 'list-item', 'table'].includes(style.display) ||
+        ['flex', 'inline-flex', 'grid', 'inline-grid'].includes(parentDisplay)
+      ) {
+        copy.setAttribute('data-pageparcel-block', 'true');
+      }
+    }
+
     for (const attr of Array.from(copy.attributes)) {
       if (attr.name.startsWith('on') || attr.name === 'srcdoc') copy.removeAttribute(attr.name);
     }

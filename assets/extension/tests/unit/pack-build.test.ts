@@ -53,7 +53,7 @@ describe('Page Text', () => {
     expect(result.markdown).toContain('captured_at: "2026-07-20T12:00:00.000Z"');
     expect(result.markdown).toContain('## Heading');
     expect(result.markdown).toMatch(/-\s+Item/);
-    expect(result.markdown).toContain('[Guide](https://example.test/guide)');
+    expect(result.markdown).toContain('[Guide](<https://example.test/guide>)');
     expect(result.markdown).toContain('const x = 1;');
     expect(result.markdown).toContain('[Image: Diagram]');
     expect(result.markdown).toContain('truncated: false');
@@ -76,5 +76,51 @@ describe('Page Text', () => {
         html: '<html><body><input value="private"></body></html>',
       }),
     ).toThrow('No page text');
+  });
+});
+
+describe('Page Text cleanup', () => {
+  it('separates CSS block spans inside cards and adjacent links without splitting inline words', () => {
+    const { markdown } = buildPageText({
+      ...draft.snapshot,
+      html: `<html><body><main><a href="/item"><span data-pageparcel-block="true">Example by Author</span><span data-pageparcel-block="true">Useful description</span></a><a href="/next">Next</a><p>un<em>break</em>able</p><span data-pageparcel-block="true">Region Alpha</span><span data-pageparcel-block="true">42%</span></main></body></html>`,
+    });
+    expect(markdown).toContain('Example by Author · Useful description');
+    expect(markdown).toMatch(/\) +\[Next/);
+    expect(markdown).toContain('un*break*able');
+    expect(markdown).toContain('Region Alpha\n\n42%');
+  });
+  it('removes global chrome but preserves local navigation, captions, and article footers', () => {
+    const snapshot = {
+      ...draft.snapshot,
+      html: `<html><body><header><nav><a href="/">Global Home</a><a href="/shop">Global Shop</a></nav></header><main><h1>Useful report</h1><nav><a href="#one">Report section one</a><a href="#two">Report section two</a></nav><p>Substantive report with enough text to identify the content independently.</p><figure><figcaption>Important caption and source</figcaption></figure><footer>Author attribution</footer></main><div id="footerContainer"><a href="/legal">Global Legal</a><a href="/help">Global Help</a></div></body></html>`,
+    };
+    const cleaned = buildPageText(snapshot).markdown;
+    expect(cleaned).not.toContain('Global Home');
+    expect(cleaned).not.toContain('Global Legal');
+    for (const text of [
+      'Useful report',
+      'Report section one',
+      'Report section two',
+      'Important caption and source',
+      'Author attribution',
+    ])
+      expect(cleaned).toContain(text);
+    expect(cleaned).toContain('site_navigation_blocks_removed: 2');
+    const full = buildPageText(snapshot, true).markdown;
+    expect(full).toContain('Global Home');
+    expect(full).toContain('Global Legal');
+    expect(full).toContain('site_navigation_blocks_removed: 0');
+  });
+  it('retains navigation-only directories and ambiguous prose-heavy headers', () => {
+    const html = `<html><body><nav><a href="/a">Alpha</a><a href="/b">Beta</a></nav></body></html>`;
+    expect(buildPageText({ ...draft.snapshot, html }).markdown).toContain('Alpha');
+    const prose = 'Important introduction and source explanation. '.repeat(12);
+    expect(
+      buildPageText({
+        ...draft.snapshot,
+        html: `<html><body><header>${prose}<a href="/a">A</a><a href="/b">B</a></header><main><p>Report</p></main></body></html>`,
+      }).markdown,
+    ).toContain(prose.trim());
   });
 });

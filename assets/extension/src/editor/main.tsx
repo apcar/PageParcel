@@ -5,6 +5,7 @@ async function main(): Promise<void> {
       <main>
         <p class="eyebrow">PAGEPARCEL</p>
         <h1>Page Text</h1>
+        <label><input id="include-navigation" type="checkbox"> Include site navigation</label>
         <p id="details" class="details"></p>
         <p id="status" role="status">Preparing Markdown…</p>
         <button id="download" type="button" disabled>Download Markdown</button>
