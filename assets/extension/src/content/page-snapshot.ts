@@ -39,7 +39,16 @@ export function collectPageSnapshot(textOnly = false): PageSnapshot {
 
     // Preserve CSS layout boundaries that disappear when styles are removed.
     copy.removeAttribute('data-pageparcel-block');
+    copy.removeAttribute('data-pageparcel-presentation-copy');
     if (textOnly) {
+      const rect = original.getBoundingClientRect();
+      if (
+        ['absolute', 'fixed'].includes(style.position) &&
+        (rect.right < 0 || rect.bottom < 0) &&
+        /share|download|export|print|preview/i.test(`${original.className} ${original.id}`)
+      ) {
+        copy.setAttribute('data-pageparcel-presentation-copy', 'true');
+      }
       const parentDisplay = original.parentElement
         ? getComputedStyle(original.parentElement).display
         : '';
@@ -95,7 +104,15 @@ export function collectPageSnapshot(textOnly = false): PageSnapshot {
   clone.querySelectorAll('canvas').forEach((canvas) => {
     const label =
       canvas.getAttribute('aria-label') ||
-      (textOnly ? 'canvas content omitted; no OCR' : 'canvas content shown in screenshot');
+      (textOnly ? 'canvas pixels omitted from page text' : 'canvas content shown in screenshot');
+    if (
+      textOnly &&
+      canvas.closest('h1, h2, h3, h4, h5, h6') &&
+      !canvas.getAttribute('aria-label')
+    ) {
+      canvas.replaceWith(document.createTextNode(canvas.textContent?.trim() || ''));
+      return;
+    }
     canvas.replaceWith(document.createTextNode(`[${label}]`));
   });
 

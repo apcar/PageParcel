@@ -124,3 +124,71 @@ describe('Page Text cleanup', () => {
     ).toContain(prose.trim());
   });
 });
+
+describe('heading and presentation preservation', () => {
+  const text = (html: string, keepCopies = false) =>
+    buildPageText(
+      { ...draft.snapshot, html: `<html><body>${html}</body></html>` },
+      false,
+      keepCopies,
+    ).markdown;
+  it('keeps semantic headings on one line despite block wrappers and keeps emphasis', () => {
+    const result = text(
+      '<h1>What makes you <div data-pageparcel-block="true">unique</div></h1><h2><div data-pageparcel-block="true">Journeys</div> show <em>recent</em> history</h2><h3><span data-pageparcel-block="true">Traits</span> passed down</h3>',
+    );
+    expect(result).toContain('# What makes you unique');
+    expect(result).toContain('## Journeys show *recent* history');
+    expect(result).toContain('### Traits passed down');
+    expect(result).not.toMatch(/^#{1,6}\s*$/m);
+  });
+  const report =
+    '<p>A detailed report about Region Alpha and Region Beta.</p><ul><li>Region Alpha 42%</li><li>Region Beta 17%</li></ul><p>Source: Archive 1900.</p><a href="/source">Original source</a>';
+  it('removes only marked matching export copies and offers lossless recovery', () => {
+    const html = `<section>${report}<div data-pageparcel-presentation-copy="true">${report}</div></section>`;
+    expect(text(html).match(/Region Alpha 42%/g)).toHaveLength(1);
+    expect(text(html)).toContain('presentation_copies_removed: 1');
+    expect(text(html, true).match(/Region Alpha 42%/g)).toHaveLength(2);
+    expect(text(html, true)).toContain('presentation_copies_removed: 0');
+  });
+  it.each([
+    report.replace('42%', '43%'),
+    report.replace('Archive 1900', 'Archive 1901'),
+    report.replace('href="/source"', 'href="/different-source"'),
+    report + '<img alt="Unique historical photograph">',
+    report + '<h3>Different section context</h3>',
+  ])(
+    'retains presentation copies with a distinct fact, source, image label, or heading',
+    (copy) => {
+      expect(
+        text(
+          `<section>${report}<div data-pageparcel-presentation-copy="true">${copy}</div></section>`,
+        ),
+      ).toContain('presentation_copies_removed: 0');
+    },
+  );
+  it('retains ordinary repeated prose and matching blocks in different sections', () => {
+    expect(text(`<section>${report}${report}</section>`).match(/Region Alpha 42%/g)).toHaveLength(
+      2,
+    );
+    expect(
+      text(
+        `<section>${report}</section><section><div data-pageparcel-presentation-copy="true">${report}</div></section>`,
+      ),
+    ).toContain('presentation_copies_removed: 0');
+  });
+});
+
+it('retains marked root headings, source links, and structured tables even when nearby prose matches', () => {
+  const phrase = 'Detailed report information that must retain its structure';
+  for (const copy of [
+    `<h2 data-pageparcel-presentation-copy="true">${phrase}</h2>`,
+    `<a data-pageparcel-presentation-copy="true" href="/unique-source">${phrase}</a>`,
+    `<table data-pageparcel-presentation-copy="true"><tr><td>${phrase}</td></tr></table>`,
+  ]) {
+    const markdown = buildPageText({
+      ...draft.snapshot,
+      html: `<html><body><section><p>${phrase}</p>${copy}</section></body></html>`,
+    }).markdown;
+    expect(markdown).toContain('presentation_copies_removed: 0');
+  }
+});

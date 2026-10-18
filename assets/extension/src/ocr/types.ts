@@ -7,7 +7,20 @@ export interface OcrResult {
   text: string;
   confidence: number;
 }
+export type OcrSkipReason =
+  | 'covered'
+  | 'image-limit'
+  | 'not-loaded'
+  | 'pixel-limit'
+  | 'browser-security'
+  | 'canvas-unavailable'
+  | 'read-failed';
+export interface OcrSkip {
+  label: string;
+  reason: OcrSkipReason;
+}
 export interface OcrCapture {
+  skipped?: OcrSkip[];
   images: OcrImage[];
   omitted: number;
   results?: OcrResult[];

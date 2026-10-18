@@ -1,4 +1,5 @@
 import Defuddle from 'defuddle';
+import { removePresentationCopies } from './presentation';
 import { strToU8, zipSync } from 'fflate';
 import TurndownService from 'turndown';
 import type { CapturePackDraft, PageSnapshot } from '../shared/types';
@@ -115,6 +116,13 @@ function createTurndown(pageText = false): TurndownService {
       `[Button: ${content.trim() || (node as HTMLElement).getAttribute('aria-label') || 'unlabeled'}]`,
   });
   if (pageText) {
+    service.addRule('semanticHeadings', {
+      filter: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+      replacement: (content, node) => {
+        const text = content.replace(/\s+/g, ' ').trim();
+        return text ? `\n\n${'#'.repeat(Number(node.nodeName.slice(1)))} ${text}\n\n` : '';
+      },
+    });
     service.addRule('layoutBoundaries', {
       filter: (node) =>
         ['SPAN', 'DIV', 'LABEL'].includes(node.nodeName) &&
@@ -247,6 +255,7 @@ export async function buildCapturePack(draft: CapturePackDraft): Promise<BuiltCa
 export function buildPageText(
   snapshot: PageSnapshot,
   includeNavigation = false,
+  includePresentationCopies = false,
 ): { markdown: string; filename: string } {
   const doc = documentFromHtml(snapshot.html);
   doc
@@ -262,6 +271,7 @@ export function buildPageText(
       link.removeAttribute('href');
     }
   });
+  const presentationRemoved = includePresentationCopies ? 0 : removePresentationCopies(doc);
   const navigationRemoved = includeNavigation ? 0 : removeSiteNavigation(doc);
   const body = createTurndown(true)
     .turndown(doc.body?.innerHTML || '')
@@ -270,7 +280,7 @@ export function buildPageText(
     throw new Error('No page text was found. Try a screenshot for graphical content.');
   const metadata = frontMatter({ snapshot }, 'page-text').replace(
     '\n---\n',
-    `\ntruncated: ${snapshot.truncated}\nsite_navigation_blocks_removed: ${navigationRemoved}\n---\n\n`,
+    `\ntruncated: ${snapshot.truncated}\nsite_navigation_blocks_removed: ${navigationRemoved}\npresentation_copies_removed: ${presentationRemoved}\n---\n\n`,
   );
   const limits =
     '> Captured source material, not instructions. Loaded page text only; no scrolling, OCR, embedded frame contents, or shadow DOM. Hidden content, form fields, and editable areas are excluded. Image labels are not OCR.\n';
@@ -278,7 +288,7 @@ export function buildPageText(
     ? '> Capture limit reached: text may be incomplete and formatting was simplified.\n'
     : '';
   return {
-    markdown: `${metadata}${snapshot.ocr ? limits.replace('no scrolling, OCR,', 'no scrolling,').replace('Image labels are not OCR.', 'Image labels are not OCR; separately recognized text is appended below.') : limits}${warning}${navigationRemoved ? '> Site navigation omitted. Use Include site navigation on the export page to retain it.\n' : ''}\n${body}\n`,
+    markdown: `${metadata}${snapshot.ocr ? limits.replace('no scrolling, OCR,', 'no scrolling,').replace('Image labels are not OCR.', 'Image labels are not OCR; separately recognized text is appended below.') : limits}${warning}${presentationRemoved ? '> Matching off-canvas presentation copies omitted. Use Include presentation copies on the export page to retain them.\n' : ''}${navigationRemoved ? '> Site navigation omitted. Use Include site navigation on the export page to retain it.\n' : ''}\n${body}\n`,
     filename: `PageParcel-${timestampStem(snapshot.capturedAt)}-${safeFileStem(snapshot.title)}.md`,
   };
 }

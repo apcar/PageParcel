@@ -28,20 +28,23 @@ async function main(): Promise<void> {
     }
     const ocrText = snapshot.ocr ? ocrMarkdown(snapshot.ocr) : '';
     const includeNavigation = document.querySelector<HTMLInputElement>('#include-navigation')!;
+    const includeCopies = document.querySelector<HTMLInputElement>('#include-presentation-copies')!;
     let result = buildPageText(snapshot);
     result.markdown += ocrText;
     let url = URL.createObjectURL(
       new Blob([result.markdown], { type: 'text/markdown;charset=utf-8' }),
     );
-    includeNavigation.addEventListener('change', () => {
-      result = buildPageText(snapshot, includeNavigation.checked);
+    const regenerate = () => {
+      result = buildPageText(snapshot, includeNavigation.checked, includeCopies.checked);
       result.markdown += ocrText;
       URL.revokeObjectURL(url);
       url = URL.createObjectURL(
         new Blob([result.markdown], { type: 'text/markdown;charset=utf-8' }),
       );
       status.textContent = 'Options changed. Download Markdown to save this version.';
-    });
+    };
+    includeNavigation.addEventListener('change', regenerate);
+    includeCopies.addEventListener('change', regenerate);
     window.addEventListener('pagehide', () => URL.revokeObjectURL(url), { once: true });
     button.disabled = false;
     const download = async () => {
