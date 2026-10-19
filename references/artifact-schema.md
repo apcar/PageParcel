@@ -50,12 +50,14 @@ Schema 1.0 (PageParcel 0.1–0.2) is the same without `page-text.md`, `page-view
 
 ### What the verifier checks
 
-- ZIP or extracted folder; no duplicate names, symbolic links, nested paths, or `..`.
+- ZIP or extracted folder. Members must be regular files: no symbolic links, devices, pipes, directories, or nested paths. No executable, setuid, setgid or sticky permission bits (ZIPs written without Unix modes, as the extension writes them, are fine). No duplicate names, `..`, absolute paths, or files over 512 MiB (2 GiB in total).
+- Only the files PageParcel writes are allowed: `page.md`, `page-reader.md`, `page-text.md`, `page.json`, `page.png` or `page-NNN.png`, and `page-viewport.png`. Any other name or type is rejected, even if it is registered with a correct hash.
 - `page.md`, `page-reader.md`, and `page.json` are present; Markdown is not empty.
+- `page.json` is a JSON object with the expected shapes: `artifacts` is a list of objects, each `name` is an allowed file name registered once, `sha256` is 64 lowercase hex characters, and `bytes` is a whole number. `security`, `capture`, `source` and `extraction` are objects when present. A malformed file gives a clear error, never a crash, so one bad input does not stop a multi-file run.
 - Every file is registered, every registered file exists, and each byte count and SHA-256 matches.
 - At least one page screenshot; every PNG has a valid signature; `segment_count` matches the segments.
-- No `.html`, `.htm`, `.js`, or `.svg` files; `local_only` is set.
-- Folders: `.DS_Store` and other dotfiles are ignored.
+- `security.local_only` is `true`.
+- Folders: macOS metadata (`.DS_Store`, `._*`) is ignored; any other extra file, including other dotfiles, is rejected.
 
 ## Page Text (`PageParcel-<UTC timestamp>-<title>.md`), schema page-text/1.0
 
