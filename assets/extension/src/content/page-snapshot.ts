@@ -57,6 +57,7 @@ export function collectPageSnapshot(textOnly = false): PageSnapshot {
     // Preserve CSS layout boundaries that disappear when styles are removed.
     copy.removeAttribute('data-pageparcel-block');
     copy.removeAttribute('data-pageparcel-presentation-copy');
+    copy.removeAttribute('data-pageparcel-icon');
     if (textOnly) {
       const rect = original.getBoundingClientRect();
       if (
@@ -66,15 +67,16 @@ export function collectPageSnapshot(textOnly = false): PageSnapshot {
       ) {
         copy.setAttribute('data-pageparcel-presentation-copy', 'true');
       }
-      const parentDisplay = original.parentElement
-        ? getComputedStyle(original.parentElement).display
-        : '';
-      if (
-        ['block', 'flex', 'grid', 'list-item', 'table'].includes(style.display) ||
-        ['flex', 'inline-flex', 'grid', 'inline-grid'].includes(parentDisplay)
-      ) {
-        copy.setAttribute('data-pageparcel-block', 'true');
-      }
+    }
+    // Both Page Text and the Trace Bundle's structured Markdown use these marks.
+    const parentDisplay = original.parentElement
+      ? getComputedStyle(original.parentElement).display
+      : '';
+    if (
+      ['block', 'flex', 'grid', 'list-item', 'table'].includes(style.display) ||
+      ['flex', 'inline-flex', 'grid', 'inline-grid'].includes(parentDisplay)
+    ) {
+      copy.setAttribute('data-pageparcel-block', 'true');
     }
 
     for (const attr of Array.from(copy.attributes)) {
@@ -166,6 +168,18 @@ export function collectPageSnapshot(textOnly = false): PageSnapshot {
 
   if (textOnly) pruneClosedDetails(clone);
 
+  // Keep the accessible name of labeled icons; the vector markup itself is never kept.
+  clone.querySelectorAll('svg').forEach((svg) => {
+    const label = (svg.getAttribute('aria-label') || svg.querySelector('title')?.textContent || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 200);
+    if (!label) return;
+    const icon = document.createElement('span');
+    icon.setAttribute('data-pageparcel-icon', 'true');
+    icon.setAttribute('aria-label', label);
+    svg.replaceWith(icon);
+  });
   clone
     .querySelectorAll('script, style, noscript, template, svg, object, embed')
     .forEach((el) => el.remove());

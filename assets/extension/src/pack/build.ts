@@ -34,6 +34,63 @@ function safeHref(value: string): string {
   return /^(javascript|data|vbscript):/i.test(trimmed) ? '' : trimmed;
 }
 
+const LINK_PROTOCOLS = ['http:', 'https:', 'mailto:', 'tel:'];
+
+/** Resolve links against the captured page URL; drop hrefs that cannot be followed. */
+function resolveLinks(doc: Document, baseUrl: string): void {
+  doc.querySelectorAll('a[href]').forEach((link) => {
+    const raw = (link.getAttribute('href') || '').trim();
+    if (!raw || raw === '#') {
+      link.removeAttribute('href');
+      return;
+    }
+    try {
+      const url = new URL(raw, baseUrl);
+      if (LINK_PROTOCOLS.includes(url.protocol)) link.setAttribute('href', url.href);
+      else link.removeAttribute('href');
+    } catch {
+      link.removeAttribute('href');
+    }
+  });
+}
+
+/** Plain-text label for a control: image/icon tokens become words, whitespace collapses. */
+export function controlLabel(content: string): string {
+  return content
+    .replace(/\[(?:Image|Icon): unlabeled\]/g, ' ')
+    .replace(/\[(?:Image|Icon): ([^\]]*)\]/g, ' $1 ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function markdownLinkTarget(href: string): string {
+  return href.replace(/([()])/g, '\\$1');
+}
+
+/**
+ * Make runs of interface controls readable without dropping any of them:
+ * a line of two or more buttons becomes one `[Buttons: A · B]` record, and
+ * adjacent control tokens are separated by a space. Code fences are untouched.
+ */
+export function tidyControls(markdown: string): string {
+  let fenced = false;
+  return markdown
+    .split('\n')
+    .map((line) => {
+      if (/^\s*(`{3,}|~{3,})/.test(line)) fenced = !fenced;
+      if (fenced || /^\s*(`{3,}|~{3,})/.test(line)) return line;
+      const run = /^(\s*(?:[-*+]\s+|\d+\.\s+)?)((?:\[Button: [^[\]]*\]\s*){2,})$/.exec(line);
+      if (run) {
+        const labels = Array.from(run[2].matchAll(/\[Button: ([^[\]]*)\]/g), (m) => m[1]);
+        return `${run[1]}[Buttons: ${labels.join(' · ')}]`;
+      }
+      return line
+        .replace(/\](?=\[(?:Button|Buttons|Link|Image|Icon)[:\]])/g, '] ')
+        .replace(/\)(?=\[(?:Button|Buttons|Image|Icon): )/g, ') ');
+    })
+    .join('\n');
+}
+
 function sanitizeDocument(doc: Document): void {
   doc
     .querySelectorAll('script, style, noscript, template, object, embed, svg')
@@ -54,7 +111,7 @@ function sanitizeDocument(doc: Document): void {
   });
 }
 
-function createTurndown(pageText = false): TurndownService {
+function createTurndown(pageText = false, reader = false): TurndownService {
   const service = new TurndownService({
     headingStyle: 'atx',
     bulletListMarker: '-',
@@ -92,8 +149,15 @@ function createTurndown(pageText = false): TurndownService {
     filter: 'input',
     replacement: (_content, node) => {
       const input = node as HTMLInputElement;
-      const label =
-        input.getAttribute('aria-label') || input.name || input.id || input.type || 'field';
+      const label = (
+        input.getAttribute('aria-label') ||
+        input.name ||
+        input.id ||
+        input.type ||
+        'field'
+      )
+        .replace(/<[^>]*>/g, '')
+        .trim();
       if (input.type === 'checkbox' || input.type === 'radio') {
         return `${input.checked ? '[x]' : '[ ]'} ${label}`;
       }
@@ -105,7 +169,9 @@ function createTurndown(pageText = false): TurndownService {
     replacement: (_content, node) => {
       const select = node as HTMLSelectElement;
       const label = select.getAttribute('aria-label') || select.name || select.id || 'select';
-      const values = Array.from(select.selectedOptions)
+      // The snapshot records selection as attributes; read them rather than live state.
+      const values = Array.from(select.querySelectorAll('option'))
+        .filter((option) => option.hasAttribute('selected'))
         .map((option) => option.textContent?.trim())
         .filter(Boolean);
       return `[${label}: ${values.join(', ')}]`;
@@ -114,8 +180,50 @@ function createTurndown(pageText = false): TurndownService {
   service.addRule('buttons', {
     filter: 'button',
     replacement: (content, node) =>
-      `[Button: ${content.trim() || (node as HTMLElement).getAttribute('aria-label') || 'unlabeled'}]`,
+      `[Button: ${controlLabel(content) || (node as HTMLElement).getAttribute('aria-label')?.trim() || 'unlabeled'}]`,
   });
+  service.addRule('labeledIcons', {
+    filter: (node) =>
+      node.nodeName === 'SPAN' &&
+      (node as HTMLElement).getAttribute('data-pageparcel-icon') === 'true' &&
+      !!(node as HTMLElement).getAttribute('aria-label'),
+    replacement: (_content, node) => `[Icon: ${(node as HTMLElement).getAttribute('aria-label')}]`,
+  });
+  if (reader) {
+    // Reader view is the low-clutter variant: links with no visible text are omitted.
+    service.addRule('readerEmptyLinks', {
+      filter: (node) => node.nodeName === 'A' && !(node.textContent || '').trim(),
+      replacement: () => '',
+    });
+  }
+  if (!pageText && !reader) {
+    service.addRule('structuredLayoutBoundaries', {
+      filter: (node) =>
+        ['SPAN', 'DIV', 'LABEL'].includes(node.nodeName) &&
+        (node as HTMLElement).getAttribute('data-pageparcel-block') === 'true',
+      replacement: (content, node) =>
+        (node as HTMLElement).closest('button, a, [role="button"]')
+          ? ` ${content.trim()} `
+          : `\n\n${content.trim()}\n\n`,
+    });
+    service.addRule('labeledEmptyLinks', {
+      filter: (node) =>
+        node.nodeName === 'A' &&
+        !!(node as HTMLElement).getAttribute('href') &&
+        !(node.textContent || '').trim() &&
+        !(node as HTMLElement).querySelector('img, input, select, textarea, button'),
+      replacement: (_content, node) => {
+        const el = node as HTMLElement;
+        const label =
+          el.getAttribute('aria-label') ||
+          el.getAttribute('title') ||
+          el.querySelector('[data-pageparcel-icon="true"]')?.getAttribute('aria-label') ||
+          'unlabeled';
+        const text = label.replace(/\s+/g, ' ').replace(/[[\]]/g, '').trim() || 'unlabeled';
+        return `[Link: ${text}](${markdownLinkTarget(el.getAttribute('href') || '')})`;
+      },
+    });
+  }
   if (pageText) {
     service.addRule('semanticHeadings', {
       filter: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
@@ -162,7 +270,8 @@ function documentFromHtml(html: string): Document {
 
 export function buildStructuredMarkdown(draft: { snapshot: PageSnapshot }): string {
   const doc = documentFromHtml(draft.snapshot.html);
-  const markdown = createTurndown().turndown(doc.body?.innerHTML || '');
+  resolveLinks(doc, draft.snapshot.url);
+  const markdown = tidyControls(createTurndown().turndown(doc.body?.innerHTML || ''));
   return `${frontMatter(draft, 'structured')}# ${draft.snapshot.title}\n\n${markdown.trim()}\n`;
 }
 
@@ -181,7 +290,7 @@ export function buildReaderMarkdown(draft: CapturePackDraft): string {
   } catch {
     // A faithful local fallback is better than failing the whole Trace Bundle.
   }
-  const markdown = createTurndown().turndown(content);
+  const markdown = createTurndown(false, true).turndown(content);
   return `${frontMatter(draft, 'reader')}# ${title}\n\n${markdown.trim()}\n`;
 }
 
@@ -262,21 +371,10 @@ export function buildPageText(
   doc
     .querySelectorAll('input, textarea, select, [contenteditable]:not([contenteditable="false"])')
     .forEach((el) => el.remove());
-  doc.querySelectorAll('a[href]').forEach((link) => {
-    try {
-      const url = new URL(link.getAttribute('href') || '', snapshot.url);
-      if (['http:', 'https:', 'mailto:', 'tel:'].includes(url.protocol))
-        link.setAttribute('href', url.href);
-      else link.removeAttribute('href');
-    } catch {
-      link.removeAttribute('href');
-    }
-  });
+  resolveLinks(doc, snapshot.url);
   const presentationRemoved = includePresentationCopies ? 0 : removePresentationCopies(doc);
   const navigationRemoved = includeNavigation ? 0 : removeSiteNavigation(doc);
-  const body = createTurndown(true)
-    .turndown(doc.body?.innerHTML || '')
-    .trim();
+  const body = tidyControls(createTurndown(true).turndown(doc.body?.innerHTML || '')).trim();
   if (!body && !snapshot.ocr)
     throw new Error('No page text was found. Try a screenshot for graphical content.');
   const metadata = frontMatter({ snapshot }, 'page-text').replace(
