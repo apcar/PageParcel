@@ -12,7 +12,10 @@ All notable changes to PageParcel are documented here.
 - **Trace Bundle schema 1.1.**
   - Bundles add `page-text.md`, an `extraction` block recording whether Page Text is included, the reader-to-structured text ratio, and a sparse-reader flag.
   - On app pages that scroll an inner panel, bundles add `page-viewport.png` so the sidebar and header are kept.
-- **`scripts/verify_bundle.py`.** Accepts ZIPs, folders and Page Text files, and supports `--json`. Registration is strict: it rejects unregistered, duplicate, symlinked, nested, unsafe or executable files.
+- **`scripts/verify_bundle.py`.** Accepts ZIPs, folders and Page Text files, and supports `--json`.
+  - Only the file names PageParcel writes are allowed.
+  - It rejects unregistered, duplicate, symlinked, nested, special or executable-mode files.
+  - It validates the shape of `page.json`, so malformed input gives a structured error instead of a crash.
 - **`scripts/find_latest_bundle.py`.** Finds the newest Trace Bundle, Page Text file or extracted folder, with `--kind`, `--since`, `--dir`, `--all` and `--json`.
 - **Agent and design docs.** `docs/agents.md` explains how agents use PageParcel today. `docs/design/native-messaging-mcp.md` is a reviewed proposal for agent-triggered capture.
 - `docs/testing.md` and `scripts/ci_local.sh`, which runs every CI gate locally.
@@ -24,6 +27,8 @@ All notable changes to PageParcel are documented here.
   - Icon-only links read as `[Link: label](url)`.
   - Runs of buttons collapse into `[Buttons: A · B]`.
   - Adjacent layout blocks no longer run together.
+  - Fenced code (CommonMark rules) and inline code are never rewritten. Inline code that is wholly one link keeps its target.
+- **Editable areas** (drafts, rich-text editors) are excluded from all three Markdown outputs, not only Page Text.
 - **Stitched captures.** Overlay scrollbars that take no layout space are hidden during stitching, so thumbs no longer repeat down the image. Captures use the content width, excluding the scrollbar.
 - **Redaction.**
   - Coverage widened to aria-label and placeholder text, and to passcodes, private keys, card CVC/expiry, one-time codes, SSN, IBAN, and account and routing numbers.
