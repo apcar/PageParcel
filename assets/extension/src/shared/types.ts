@@ -56,6 +56,14 @@ export interface Metrics {
   scrollHeight: number;
   viewportHeight: number;
   viewportWidth: number;
+  /**
+   * CSS-px width of the scrolled content, excluding a classic (space-taking)
+   * scrollbar. Full-page tiles are cropped to this width.
+   */
+  contentWidth?: number;
+  /** CSS-px size of the browser viewport (the full captureVisibleTab frame). */
+  windowWidth?: number;
+  windowHeight?: number;
   devicePixelRatio: number;
   initialScrollY: number;
   /**
@@ -90,6 +98,11 @@ export interface CapturePackDraft {
   pageHeight: number;
   devicePixelRatio: number;
   captureMethod: 'full-page-scroll-stitch';
+  /**
+   * When an inner element scrolls, the uncropped first viewport, which shows the
+   * surrounding app chrome (headers, sidebars) that the stitched page omits.
+   */
+  viewportContext?: { dataUrl: string; width: number; height: number };
 }
 
 /** A rectangle in CSS pixels (viewport-relative for region select). */

@@ -322,6 +322,8 @@ export async function buildCapturePack(draft: CapturePackDraft): Promise<BuiltCa
       draft.segments.length === 1 ? 'page.png' : `page-${String(i + 1).padStart(3, '0')}.png`;
     files[name] = dataUrlToBytes(draft.segments[i].dataUrl);
   }
+  if (draft.viewportContext)
+    files['page-viewport.png'] = dataUrlToBytes(draft.viewportContext.dataUrl);
 
   const artifacts = [];
   for (const [name, bytes] of Object.entries(files)) {
@@ -344,6 +346,16 @@ export async function buildCapturePack(draft: CapturePackDraft): Promise<BuiltCa
       device_pixel_ratio: draft.devicePixelRatio,
       segment_count: draft.segments.length,
       dom_snapshot_truncated: draft.snapshot.truncated,
+      scroll_container: !!draft.viewportContext,
+      ...(draft.viewportContext
+        ? {
+            viewport_context: {
+              artifact: 'page-viewport.png',
+              width_px: draft.viewportContext.width,
+              height_px: draft.viewportContext.height,
+            },
+          }
+        : {}),
     },
     security: {
       local_only: true,
