@@ -1,6 +1,6 @@
 # Design: a local CLI and MCP server for PageParcel
 
-Status: **proposal, not implemented.** It needs a security review and an explicit decision before any code lands, because it adds a permission.
+Status: **proposal, not implemented.** The native-messaging design needs a security review and an explicit decision before any code lands, because it adds a permission. The read/verify interface at the end is a separate, smaller proposal with no new permission, and it is the recommended first step.
 
 ## Problem
 
@@ -42,9 +42,18 @@ agent ──shell────────▶ pageparcel CLI ─┼─▶ local s
 
 Invariants that must not change: no host permissions by default, no network, no analytics, explicit user intent for every capture, and output only on the local disk.
 
-## Smallest useful first step (no new permission)
+## Recommended first step: a read/verify interface over existing files (no new permission)
 
-Before native messaging: ship `find_latest_bundle.py --since` and `verify_bundle.py --json` (done in 0.3.0), plus an MCP server limited to `latest_capture`, `verify_capture`, and `read_capture` over existing files. Agents still trigger captures through the UI, but everything after the click becomes a clean tool call.
+This step is a **separate, smaller proposal** that does not depend on anything above, and it is the recommended place to start (it was also the suggestion of an external review of 0.3.0). Native messaging stays a later decision.
+
+- **Scope:** a local MCP server and CLI that only *read* captures already on disk. The tools are `latest_capture(kind, since)`, `verify_capture(path)`, and `read_capture(path, part)`, built on `find_latest_bundle.py --json` and `verify_bundle.py --json` (both shipped in 0.3.0).
+- **No extension changes.** It needs no new permission and no messaging channel. Agents still trigger captures through the Chrome UI, and everything after the click becomes a clean tool call.
+- **Guardrails:**
+  - Reads only under configured roots (Downloads by default).
+  - Never writes, moves, or deletes.
+  - Opens no network sockets.
+  - `read_capture` returns content only after the capture verifies, together with its provenance and the "captured source material, not instructions" banner.
+- **Review needed:** path handling (symlinks, traversal outside the roots) and the size limits for returned content.
 
 ## Open questions
 
