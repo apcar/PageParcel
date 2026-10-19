@@ -1,6 +1,6 @@
 import './pack.css';
 import { setDuplicateOption } from './view';
-import { buildPageText } from './build';
+import { buildPageText, sealPageText } from './build';
 import { ocrMarkdown } from '../ocr/markdown';
 import type { PageSnapshot } from '../shared/types';
 
@@ -30,23 +30,27 @@ async function main(): Promise<void> {
     const ocrText = snapshot.ocr ? ocrMarkdown(snapshot.ocr) : '';
     const includeNavigation = document.querySelector<HTMLInputElement>('#include-navigation')!;
     const includeCopies = document.querySelector<HTMLInputElement>('#include-presentation-copies')!;
-    let result = buildPageText(snapshot);
-    result.markdown += ocrText;
-    setDuplicateOption(result.presentationCopiesRemoved);
-    let url = URL.createObjectURL(
-      new Blob([result.markdown], { type: 'text/markdown;charset=utf-8' }),
-    );
-    const regenerate = () => {
-      result = buildPageText(snapshot, includeNavigation.checked, includeCopies.checked);
-      result.markdown += ocrText;
-      URL.revokeObjectURL(url);
-      url = URL.createObjectURL(
-        new Blob([result.markdown], { type: 'text/markdown;charset=utf-8' }),
+    const version = chrome.runtime.getManifest().version;
+    // Seal after OCR text is appended so the integrity line covers the whole file.
+    const sealedUrl = async (markdown: string) =>
+      URL.createObjectURL(
+        new Blob([await sealPageText(markdown, version)], {
+          type: 'text/markdown;charset=utf-8',
+        }),
       );
+    let result = buildPageText(snapshot);
+    setDuplicateOption(result.presentationCopiesRemoved);
+    let url = await sealedUrl(result.markdown + ocrText);
+    const regenerate = async () => {
+      button.disabled = true;
+      result = buildPageText(snapshot, includeNavigation.checked, includeCopies.checked);
+      URL.revokeObjectURL(url);
+      url = await sealedUrl(result.markdown + ocrText);
+      button.disabled = false;
       status.textContent = 'Options changed. Download Markdown to save this version.';
     };
-    includeNavigation.addEventListener('change', regenerate);
-    includeCopies.addEventListener('change', regenerate);
+    includeNavigation.addEventListener('change', () => void regenerate());
+    includeCopies.addEventListener('change', () => void regenerate());
     window.addEventListener('pagehide', () => URL.revokeObjectURL(url), { once: true });
     button.disabled = false;
     const download = async () => {

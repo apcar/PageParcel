@@ -1,0 +1,19 @@
+import{_ as x}from"./index.html-1evzwhef.js";import{s as b,b as w}from"./build-CAxr3JV0.js";import{setDuplicateOption as y}from"./view-CVLEyYsF.js";import"./jsxRuntime.module-DyidlF8t.js";import"./pack-BjQ7QVKp.js";function k(e){const o=[`
+## OCR from visible graphics
+`,`> Local English OCR of readable images/canvases intersecting the viewport. Recognition can be wrong and duplicate page text. No screenshots, map/chart interpretation, SVG, CSS backgrounds, frames, or shadow DOM. Cross-origin restrictions can prevent recognition.
+`];e.omitted&&o.push(`> ${e.omitted} candidate graphic(s) skipped.
+`);const n={covered:"Covered by another page element at the visibility check point.","image-limit":"Eight-image limit reached.","not-loaded":"Image or canvas has no readable pixel dimensions yet.","pixel-limit":"Four-million-pixel processing limit reached.","browser-security":"Browser security blocked pixel access (usually a cross-origin image or tainted canvas).","canvas-unavailable":"Local canvas context unavailable.","read-failed":"Pixel read failed; the browser did not provide a more specific reason."};for(const[r,t]of(e.skipped||[]).entries())o.push(`### Skipped graphic ${r+1}
+
+${n[t.reason]}
+`),o.push(v(t.label));const a=e.omitted-(e.skipped?.length||0);a>0&&o.push(`> ${a} further skip reason(s) unavailable or omitted from the bounded diagnostic list.
+`),e.error&&o.push(`> ${e.error}
+`),e.results?.length||o.push(`No OCR text was obtained.
+`);for(const[r,t]of(e.results||[]).entries()){o.push(`### Graphic ${r+1}
+`);const s=`${t.label}
+OCR confidence: ${Math.round(t.confidence)} / 100 (not a guarantee)
+${t.text||"[No text recognized]"}`;o.push(v(s))}return o.join(`
+`)}function v(e){const o="`".repeat(Math.max(3,...Array.from(e.matchAll(/`+/g),n=>n[0].length+1)));return`${o}text
+${e}
+${o}
+`}async function C(){const e=document.querySelector("#status"),o=document.querySelector("#details"),n=document.querySelector("#download"),a=decodeURIComponent(location.hash.slice(6));if(!/^pageparcel:text:[a-f0-9-]+$/.test(a)){e.textContent="Invalid Page Text capture.";return}try{const t={...await chrome.storage.local.get(a),...await chrome.storage.session.get(a)}[a];if(!t)throw new Error("No pending page text. Start a new capture from PageParcel.");if(await Promise.all([chrome.storage.local.remove(a),chrome.storage.session.remove(a)]),t.ocr){const{recognizeImages:d}=await x(async()=>{const{recognizeImages:l}=await import("./recognize-CT8aj4eA.js");return{recognizeImages:l}},[]);await d(t.ocr,l=>{e.textContent=l})}const s=t.ocr?k(t.ocr):"",m=document.querySelector("#include-navigation"),g=document.querySelector("#include-presentation-copies"),f=chrome.runtime.getManifest().version,h=async d=>URL.createObjectURL(new Blob([await b(d,f)],{type:"text/markdown;charset=utf-8"}));let i=w(t);y(i.presentationCopiesRemoved);let c=await h(i.markdown+s);const p=async()=>{n.disabled=!0,i=w(t,m.checked,g.checked),URL.revokeObjectURL(c),c=await h(i.markdown+s),n.disabled=!1,e.textContent="Options changed. Download Markdown to save this version."};m.addEventListener("change",()=>{p()}),g.addEventListener("change",()=>{p()}),window.addEventListener("pagehide",()=>URL.revokeObjectURL(c),{once:!0}),n.disabled=!1;const u=async()=>{try{await chrome.downloads.download({url:c,filename:i.filename}),e.textContent=t.truncated?"Download started. Capture limit reached: text may be incomplete; see the file notice.":"Markdown download started. Nothing was uploaded."}catch{e.textContent="Download could not start. Use Download Markdown to try again."}};n.addEventListener("click",()=>{u()}),o.textContent=`${t.title}
+${t.url}`,await Promise.all([chrome.storage.local.remove(a),chrome.storage.session.remove(a)]),await u()}catch(r){e.textContent=r instanceof Error?r.message:"Could not prepare Page Text.",e.dataset.error="true",await Promise.all([chrome.storage.local.remove(a),chrome.storage.session.remove(a)])}}C();

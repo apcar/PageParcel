@@ -103,6 +103,8 @@ export interface CapturePackDraft {
    * surrounding app chrome (headers, sidebars) that the stitched page omits.
    */
   viewportContext?: { dataUrl: string; width: number; height: number };
+  /** Faithful Page Text snapshot taken during the same capture, for page-text.md. */
+  textSnapshot?: PageSnapshot;
 }
 
 /** A rectangle in CSS pixels (viewport-relative for region select). */

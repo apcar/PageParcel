@@ -312,10 +312,43 @@ function timestampStem(iso: string): string {
     .replace(/\.\d{3}Z$/, 'Z');
 }
 
+/** Letters and digits only: a markup-independent measure of how much text a variant kept. */
+function textWeight(markdown: string): number {
+  const body = markdown.replace(/^---\n[\s\S]*?\n---\n/, '');
+  return (body.match(/[\p{L}\p{N}]/gu) || []).length;
+}
+
+/** Reader extraction often keeps almost nothing on app pages; say so instead of implying completeness. */
+export const READER_SPARSE_RATIO = 0.25;
+const READER_SPARSE_MIN_TEXT = 400;
+
 export async function buildCapturePack(draft: CapturePackDraft): Promise<BuiltCapturePack> {
   const files: Record<string, Uint8Array> = {};
-  files['page.md'] = strToU8(buildStructuredMarkdown(draft));
-  files['page-reader.md'] = strToU8(buildReaderMarkdown(draft));
+  const structured = buildStructuredMarkdown(draft);
+  let reader = buildReaderMarkdown(draft);
+  const structuredWeight = textWeight(structured);
+  const readerRatio = structuredWeight
+    ? Math.min(1, Math.round((textWeight(reader) / structuredWeight) * 1000) / 1000)
+    : 1;
+  const readerSparse =
+    structuredWeight >= READER_SPARSE_MIN_TEXT && readerRatio < READER_SPARSE_RATIO;
+  if (readerSparse) {
+    reader = reader.replace(
+      /\n---\n/,
+      `\n---\n\n> Reader view kept about ${Math.round(readerRatio * 100)}% of the page text. Use page.md (structured) or page-text.md for the complete capture.\n`,
+    );
+  }
+  files['page.md'] = strToU8(structured);
+  files['page-reader.md'] = strToU8(reader);
+  let pageTextIncluded = false;
+  if (draft.textSnapshot) {
+    try {
+      files['page-text.md'] = strToU8(buildPageText(draft.textSnapshot).markdown);
+      pageTextIncluded = true;
+    } catch {
+      // A page with no text still gets its screenshot and structured record.
+    }
+  }
 
   for (let i = 0; i < draft.segments.length; i++) {
     const name =
@@ -330,7 +363,7 @@ export async function buildCapturePack(draft: CapturePackDraft): Promise<BuiltCa
     artifacts.push({ name, bytes: bytes.length, sha256: await sha256(bytes) });
   }
   const manifest = {
-    schema_version: '1.0',
+    schema_version: '1.1',
     generator: { name: 'PageParcel', version: chrome.runtime.getManifest().version },
     captured_at: draft.snapshot.capturedAt,
     source: {
@@ -356,6 +389,11 @@ export async function buildCapturePack(draft: CapturePackDraft): Promise<BuiltCa
             },
           }
         : {}),
+    },
+    extraction: {
+      page_text_included: pageTextIncluded,
+      reader_text_ratio: readerRatio,
+      reader_sparse: readerSparse,
     },
     security: {
       local_only: true,
@@ -451,4 +489,24 @@ function removeSiteNavigation(doc: Document): number {
     count++;
   }
   return count;
+}
+
+export const PAGE_TEXT_SCHEMA = 'page-text/1.0';
+const SEAL_KEY = 'pageparcel_sha256';
+
+/**
+ * Make a standalone Page Text file verifiable. Adds generator and schema lines to
+ * the front matter, then a `pageparcel_sha256` line: the SHA-256 of the UTF-8 file
+ * with that one line removed. It detects later edits to any byte, including the
+ * front matter; like the Trace Bundle register it is not a signature or timestamp.
+ */
+export async function sealPageText(markdown: string, version: string): Promise<string> {
+  const end = markdown.indexOf('\n---\n');
+  if (!markdown.startsWith('---\n') || end < 0) throw new Error('Page Text front matter missing');
+  const head = markdown.slice(0, end);
+  const rest = markdown.slice(end);
+  const unsealed = `${head}\npageparcel_schema: ${PAGE_TEXT_SCHEMA}\ngenerator: ${yamlString(`PageParcel ${version}`)}${rest}`;
+  const digest = await sha256(strToU8(unsealed));
+  const close = unsealed.indexOf('\n---\n');
+  return `${unsealed.slice(0, close)}\n${SEAL_KEY}: ${digest}${unsealed.slice(close)}`;
 }

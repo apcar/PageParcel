@@ -2,7 +2,11 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createHash } from 'node:crypto';
 import { DOMParser as LinkedomParser } from 'linkedom';
 import { strFromU8, unzipSync } from 'fflate';
-import { buildCapturePack } from '../../src/pack/build';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { buildCapturePack, buildPageText, sealPageText } from '../../src/pack/build';
 import type { CapturePackDraft } from '../../src/shared/types';
 
 // 1x1 transparent PNG.
@@ -73,5 +77,83 @@ describe('Trace Bundle', () => {
     expect(app.manifest.artifacts.map((a: { name: string }) => a.name)).toContain(
       'page-viewport.png',
     );
+  });
+});
+
+const VERIFIER = resolve(__dirname, '../../../../scripts/verify_bundle.py');
+function verifyWithPython(name: string, data: Uint8Array | string) {
+  const dir = mkdtempSync(join(tmpdir(), 'pageparcel-'));
+  const path = join(dir, name);
+  writeFileSync(path, data);
+  try {
+    return JSON.parse(execFileSync('python3', [VERIFIER, '--json', path], { encoding: 'utf8' }));
+  } catch (error) {
+    return JSON.parse((error as { stdout: string }).stdout);
+  }
+}
+
+describe('schema 1.1 additions', () => {
+  it('includes faithful Page Text from the same capture and registers it', async () => {
+    const textSnapshot = {
+      ...draft().snapshot,
+      html: '<html><body><h1>Inventory</h1><p>Two numbers are ready.</p><input value="secret-ish"></body></html>',
+    };
+    const { files, manifest } = await build(draft({ textSnapshot }));
+    expect(manifest.schema_version).toBe('1.1');
+    expect(manifest.extraction.page_text_included).toBe(true);
+    const text = strFromU8(files['page-text.md']);
+    expect(text).toContain('capture_variant: page-text');
+    expect(text).toContain('Two numbers are ready.');
+    expect(text).not.toContain('secret-ish');
+    expect(manifest.artifacts.map((a: { name: string }) => a.name)).toContain('page-text.md');
+  });
+
+  it('flags a sparse reader view instead of implying it is complete', async () => {
+    // Modeled on a help-center request form: Defuddle keeps the heading, drops the form.
+    const appPage = `<html><body><main><h1>Report a problem</h1><form>${'<label><input type="checkbox"> Personal information category with a long description</label><p>Explain the content you are reporting and why it should be removed.</p>'.repeat(20)}</form></main></body></html>`;
+    const { files, manifest } = await build(
+      draft({ snapshot: { ...draft().snapshot, html: appPage } }),
+    );
+    expect(manifest.extraction.reader_sparse).toBe(true);
+    expect(strFromU8(files['page-reader.md'])).toContain('Reader view kept about');
+    const article = await build(draft());
+    expect(article.manifest.extraction.reader_sparse).toBe(false);
+    expect(strFromU8(article.files['page-reader.md'])).not.toContain('Reader view kept about');
+  });
+
+  it('produces bundles the Python verifier accepts, and rejects when tampered', async () => {
+    const { pack } = await build(draft({ textSnapshot: draft().snapshot }));
+    expect(verifyWithPython('bundle.zip', pack.bytes).ok).toBe(true);
+    const files = unzipSync(pack.bytes);
+    files['page.md'] = new TextEncoder().encode('# edited\n');
+    const { zipSync } = await import('fflate');
+    const tampered = verifyWithPython('tampered.zip', zipSync(files));
+    expect(tampered.ok).toBe(false);
+    expect(tampered.errors.join(' ')).toContain('hash mismatch: page.md');
+  });
+});
+
+describe('sealed Page Text', () => {
+  it('adds schema, generator and a whole-file SHA-256 the verifier can check', async () => {
+    const { markdown } = buildPageText({
+      ...draft().snapshot,
+      html: '<html><body><h1>Title</h1><p>Body text.</p></body></html>',
+    });
+    const sealed = await sealPageText(`${markdown}\n## OCR\n\nRecognized text\n`, '9.9.9');
+    expect(sealed).toMatch(/\npageparcel_schema: page-text\/1\.0\n/);
+    expect(sealed).toContain('generator: "PageParcel 9.9.9"');
+    expect(sealed).toMatch(/\npageparcel_sha256: [0-9a-f]{64}\n---\n/);
+    const unsealed = sealed.replace(/^pageparcel_sha256: [0-9a-f]{64}\n/m, '');
+    const digest = sealed.match(/pageparcel_sha256: ([0-9a-f]{64})/)![1];
+    expect(createHash('sha256').update(unsealed, 'utf8').digest('hex')).toBe(digest);
+
+    expect(verifyWithPython('page.md', sealed).ok).toBe(true);
+    expect(verifyWithPython('edited.md', sealed.replace('Body text.', 'Body text!')).ok).toBe(
+      false,
+    );
+    expect(
+      verifyWithPython('edited-source.md', sealed.replace('console.example.test', 'evil.test')).ok,
+    ).toBe(false);
+    expect(verifyWithPython('unsealed.md', markdown).ok).toBe(false);
   });
 });

@@ -288,6 +288,8 @@ async function capturePack(tab: chrome.tabs.Tab): Promise<void> {
   }
 
   const snapshot = await execInTab(tabId, collectPageSnapshot, []);
+  // A second, text-only snapshot of the same page state feeds page-text.md.
+  const textSnapshot = await execInTab(tabId, collectPageSnapshot, [true]);
   const positions = computeScrollPositions(metrics.scrollHeight, metrics.viewportHeight);
   const windowId = tab.windowId ?? chrome.windows.WINDOW_ID_CURRENT;
   const crop = metrics.container
@@ -366,6 +368,7 @@ async function capturePack(tab: chrome.tabs.Tab): Promise<void> {
     devicePixelRatio: dpr,
     captureMethod: 'full-page-scroll-stitch',
     viewportContext,
+    textSnapshot,
   });
   await chrome.tabs.create({ url: PACK_URL });
   broadcast({ type: 'PACK_COMPLETE', segmentCount: segments.length });
