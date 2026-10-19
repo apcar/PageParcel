@@ -54,3 +54,6 @@ jobs:
           python3 scripts/build_public_sample.py
           python3 scripts/verify_bundle.py docs/examples/PageParcel-Sample.zip
           git diff --exit-code -- docs/examples/PageParcel-Sample.zip
+
+      - name: Committed unpacked extension matches source build
+        run: diff -r assets/extension/dist assets/extension-dist

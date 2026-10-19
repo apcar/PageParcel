@@ -87,13 +87,11 @@ it('keeps OCR in session memory, prunes only stale OCR drafts, and never screens
       session: {
         set: sessionSet,
         remove: sessionRemove,
-        get: vi
-          .fn()
-          .mockResolvedValue({
-            'pageparcel:text:old': { capturedAt: '2000-01-01' },
-            'pageparcel:text:fresh': { capturedAt: snapshot.capturedAt },
-            unrelated: { capturedAt: '2000-01-01' },
-          }),
+        get: vi.fn().mockResolvedValue({
+          'pageparcel:text:old': { capturedAt: '2000-01-01' },
+          'pageparcel:text:fresh': { capturedAt: snapshot.capturedAt },
+          unrelated: { capturedAt: '2000-01-01' },
+        }),
       },
     },
   });

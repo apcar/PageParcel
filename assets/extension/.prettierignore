@@ -2,5 +2,6 @@ dist
 node_modules
 coverage
 public/icons
+public/ocr
 *.png
 *.zip
