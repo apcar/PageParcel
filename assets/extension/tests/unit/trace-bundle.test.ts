@@ -115,7 +115,10 @@ describe('schema 1.1 additions', () => {
       draft({ snapshot: { ...draft().snapshot, html: appPage } }),
     );
     expect(manifest.extraction.reader_sparse).toBe(true);
-    expect(strFromU8(files['page-reader.md'])).toContain('Reader view kept about');
+    const reader = strFromU8(files['page-reader.md']);
+    expect(reader).toContain('Reader view kept about');
+    expect(reader).not.toMatch(/complete capture/i);
+    expect(reader).toContain('no text output includes frames, hidden or editable content');
     const article = await build(draft());
     expect(article.manifest.extraction.reader_sparse).toBe(false);
     expect(strFromU8(article.files['page-reader.md'])).not.toContain('Reader view kept about');

@@ -1,4 +1,4 @@
-import{_ as x}from"./index.html-BpgwczFv.js";import{s as b,b as w}from"./build-Kmdsi3yv.js";import{setDuplicateOption as y}from"./view-CVLEyYsF.js";import"./jsxRuntime.module-DyidlF8t.js";import"./pack-BjQ7QVKp.js";function k(e){const o=[`
+import{_ as x}from"./index.html-Xri3tzoo.js";import{s as b,b as w}from"./build-BdyX1cZv.js";import{setDuplicateOption as y}from"./view-CVLEyYsF.js";import"./jsxRuntime.module-DyidlF8t.js";import"./pack-BjQ7QVKp.js";function k(e){const o=[`
 ## OCR from visible graphics
 `,`> Local English OCR of readable images/canvases intersecting the viewport. Recognition can be wrong and duplicate page text. No screenshots, map/chart interpretation, SVG, CSS backgrounds, frames, or shadow DOM. Cross-origin restrictions can prevent recognition.
 `];e.omitted&&o.push(`> ${e.omitted} candidate graphic(s) skipped.

@@ -52,6 +52,14 @@ export function collectPageSnapshot(textOnly = false): PageSnapshot {
       copy.remove();
       continue;
     }
+    // Editable regions (drafts, comment boxes, rich-text editors) are excluded from
+    // every text output. Page Text drops them; Trace Bundle text marks the spot.
+    if (original.matches('[contenteditable]:not([contenteditable="false"])')) {
+      const marker = document.createElement('span');
+      marker.textContent = '[Editable area excluded]';
+      copy.replaceWith(marker);
+      continue;
+    }
     const style = getComputedStyle(original);
     if (
       style.display === 'none' ||

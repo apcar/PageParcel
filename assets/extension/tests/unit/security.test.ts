@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { DOMParser as LinkedomParser } from 'linkedom';
 import { collectPageSnapshot } from '../../src/content/page-snapshot';
-import { buildPageText, buildStructuredMarkdown } from '../../src/pack/build';
+import { buildPageText, buildReaderMarkdown, buildStructuredMarkdown } from '../../src/pack/build';
 
 beforeAll(() => {
   globalThis.DOMParser = LinkedomParser as unknown as typeof DOMParser;
@@ -98,6 +98,41 @@ describe('redaction of secret-like fields in the Trace Bundle', () => {
     expect(markdown).not.toContain('Austin');
     expect(markdown).not.toContain('Call back Tuesday');
     expect(markdown).not.toContain('REDACTED');
+  });
+});
+
+describe('editable drafts are excluded from every text output', () => {
+  const body = `<main><h1>Inbox</h1><p>Public message text that stays in the capture.</p>
+    <div contenteditable="true">Draft one: unsent DRAFT-ALPHA</div>
+    <div contenteditable="">Draft two: DRAFT-BETA</div>
+    <div contenteditable="plaintext-only">Draft three: DRAFT-GAMMA</div>
+    <div contenteditable="true"><p>Nested <b contenteditable="false">DRAFT-DELTA</b></p></div>
+    <div contenteditable="false">Read-only widget text stays</div></main>`;
+
+  it('drops editable regions from page.md, page-reader.md and page-text.md alike', () => {
+    const snapshot = snapshotOf(body);
+    const trace = {
+      snapshot,
+      segments: [],
+      pageWidth: 1,
+      pageHeight: 1,
+      devicePixelRatio: 1,
+      captureMethod: 'x',
+    };
+    const outputs = {
+      structured: buildStructuredMarkdown(trace),
+      reader: buildReaderMarkdown(trace),
+      text: buildPageText(snapshotOf(body, true)).markdown,
+    };
+    for (const [label, markdown] of Object.entries(outputs)) {
+      for (const draftText of ['DRAFT-ALPHA', 'DRAFT-BETA', 'DRAFT-GAMMA', 'DRAFT-DELTA'])
+        expect(markdown, `${label} leaks ${draftText}`).not.toContain(draftText);
+      expect(markdown, label).toContain('Public message text');
+      expect(markdown, label).toContain('Read-only widget text stays');
+    }
+    expect(snapshot.html).not.toContain('DRAFT-');
+    expect(outputs.structured.match(/Editable area excluded/g)?.length).toBe(4);
+    expect(outputs.text).not.toContain('Editable area excluded');
   });
 });
 

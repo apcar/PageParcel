@@ -35,7 +35,7 @@ The everyday screenshot work is still here: full-page, visible-area and region c
 
 | Mode | Output | Use it for |
 | --- | --- | --- |
-| **Trace Bundle** (⌘⇧E / Ctrl+Shift+E) | `PageParcel-<UTC time>-<title>.zip` | A complete record: screenshots, Markdown, metadata, hashes |
+| **Trace Bundle** (⌘⇧E / Ctrl+Shift+E) | `PageParcel-<UTC time>-<title>.zip` | The full record: screenshots, Markdown, metadata, hashes |
 | **Page Text** | `PageParcel-<UTC time>-<title>.md` | Fast, faithful text of the loaded page, with no scrolling and no screenshots |
 | **Full Page** (⌘⇧S / Ctrl+Shift+S) | Image or PDF via the editor | A stitched screenshot to annotate or share |
 | **Visible Area** (⌘⇧V / Alt+Shift+V) | Image or PDF via the editor | Exactly what's on screen |
@@ -134,7 +134,19 @@ See [docs/testing.md](docs/testing.md) for what is tested and [CONTRIBUTING.md](
 
 PageParcel runs only when you invoke it, on the active tab, with no host permissions. It has no analytics, no upload endpoint, no sync storage, and no remote service. The content security policy limits every resource and connection to the extension itself, and OCR assets are bundled and hash-checked.
 
-Markdown never includes passwords or other secret-like form values (tokens, API keys, payment cards, one-time codes, SSNs and similar), and Page Text leaves out form fields entirely. **Screenshots show what was on screen**, so check the page before capturing. See the [security contract](references/security-contract.md), [security policy](SECURITY.md) and [privacy notice](PRIVACY.md).
+What the text outputs leave out:
+
+- **Secret-like form values are redacted.** Trace Bundle Markdown writes `[REDACTED]` for passwords, hidden inputs, and fields whose name or label looks like a token, API key, payment card, one-time code, SSN or similar. Detection is by name and label, so a sensitive field with an innocent label can slip through.
+- **Page Text has no form fields.** It leaves out form fields entirely.
+- **Editable areas are excluded everywhere.** Drafts, comment boxes and rich-text editors are left out of all three Markdown files; Trace Bundle Markdown writes `[Editable area excluded]` in their place. Editors that are editable pages (a wiki or notes page in edit mode) therefore produce little text; switch to view mode first.
+
+**Screenshots are not redacted.** `page.png`, `page-viewport.png` and the image modes contain exactly what the browser painted:
+
+- typed card numbers, drafts and messages
+- personal details
+- notifications and anything else on screen
+
+Password fields show only their masking dots, but nothing else is hidden. Local OCR reads whatever text is in the images it processes. Review the page, or use Page Text, when a capture must not show sensitive content. See the [security contract](references/security-contract.md), [security policy](SECURITY.md) and [privacy notice](PRIVACY.md).
 
 ## Limits
 

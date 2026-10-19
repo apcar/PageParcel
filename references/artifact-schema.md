@@ -6,8 +6,8 @@ PageParcel writes two kinds of output. `scripts/verify_bundle.py` checks both.
 
 | File | Always | Contents |
 | --- | --- | --- |
-| `page.md` | yes | Structured Markdown: headings, lists, links resolved to absolute URLs, tables, labels, buttons and captured form state where safe. Text-less links are written as `[Link: <name>](url)`. |
-| `page-reader.md` | yes | Lower-clutter narrative extraction (Defuddle, synchronous mode). When it keeps less than 25% of the page text, it starts with a notice and `extraction.reader_sparse` is `true`. |
+| `page.md` | yes | Structured Markdown: headings, lists, links resolved to absolute URLs, tables, labels, buttons and captured form state where safe (secret-like values read `[REDACTED]`). Editable areas read `[Editable area excluded]`. Text-less links are written as `[Link: <name>](url)`. Inline and fenced code is literal. |
+| `page-reader.md` | yes | Lower-clutter narrative extraction (Defuddle, synchronous mode). When it keeps less than 25% of the structured text, it starts with a notice and `extraction.reader_sparse` is `true`. No text output is a complete record: frames, hidden and editable content, text past the snapshot limit, and unloaded dynamic state are excluded from all of them. |
 | `page-text.md` | 0.3.0+ | Faithful loaded-page text, the same converter as the standalone Page Text mode, taken from a text-only snapshot of the same page state. Form fields and editable areas are excluded. |
 | `page.png` or `page-001.png` … `page-NNN.png` | yes | Lossless vertical screenshot segments, each at most 24,000 px tall (160,000 px total). |
 | `page-viewport.png` | when an inner element scrolled | The uncropped first viewport, showing app chrome (headers, sidebars) that the stitched page omits. |

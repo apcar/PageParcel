@@ -429,7 +429,7 @@ export async function buildCapturePack(draft: CapturePackDraft): Promise<BuiltCa
   if (readerSparse) {
     reader = reader.replace(
       /\n---\n/,
-      `\n---\n\n> Reader view kept about ${Math.round(readerRatio * 100)}% of the page text. Use page.md (structured) or page-text.md for the complete capture.\n`,
+      `\n---\n\n> Reader view kept about ${Math.round(readerRatio * 100)}% of the page text. page.md (structured) and page-text.md keep more of it, though no text output includes frames, hidden or editable content, anything past the snapshot limit, or page state that was not loaded.\n`,
     );
   }
   files['page.md'] = strToU8(structured);
