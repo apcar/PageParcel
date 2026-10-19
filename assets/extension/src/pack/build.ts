@@ -67,26 +67,100 @@ function markdownLinkTarget(href: string): string {
   return href.replace(/([()])/g, '\\$1');
 }
 
+interface OpenFence {
+  char: string;
+  length: number;
+  indent: number;
+}
+
+/**
+ * Fenced-code tracking for Markdown we generate. Follows CommonMark: a fence is
+ * three or more backticks or tildes; a backtick fence's info string may not
+ * contain a backtick; it closes only on a line of the same character, at least
+ * as long, with no info string. An unclosed fence runs to the end. Turndown
+ * indents fences inside list items, so an opener may carry the list's
+ * indentation; a closer may be indented at most three spaces beyond it.
+ */
+function fenceOpener(line: string): OpenFence | null {
+  const match = /^(\s*)(`{3,}|~{3,})(.*)$/.exec(line);
+  if (!match) return null;
+  if (match[2][0] === '`' && match[3].includes('`')) return null;
+  return { char: match[2][0], length: match[2].length, indent: match[1].length };
+}
+
+function closesFence(line: string, open: OpenFence): boolean {
+  const match = /^(\s*)(`{3,}|~{3,})\s*$/.exec(line);
+  return (
+    !!match &&
+    match[2][0] === open.char &&
+    match[2].length >= open.length &&
+    match[1].length <= open.indent + 3
+  );
+}
+
+/**
+ * Apply `transform` to the parts of one line that are outside inline code
+ * spans. A run of N backticks opens a span that closes at the next run of
+ * exactly N; an unmatched run is literal text.
+ */
+function outsideCodeSpans(line: string, transform: (text: string) => string): string {
+  if (!line.includes('`')) return transform(line);
+  let out = '';
+  let plain = '';
+  let i = 0;
+  while (i < line.length) {
+    if (line[i] !== '`') {
+      plain += line[i++];
+      continue;
+    }
+    let j = i;
+    while (line[j] === '`') j++;
+    const ticks = line.slice(i, j);
+    const close = new RegExp(`(?<!\`)${ticks}(?!\`)`, 'g');
+    close.lastIndex = j;
+    const end = close.exec(line);
+    if (!end) {
+      plain += ticks;
+      i = j;
+      continue;
+    }
+    out += transform(plain) + line.slice(i, end.index + ticks.length);
+    plain = '';
+    i = end.index + ticks.length;
+  }
+  return out + transform(plain);
+}
+
 /**
  * Make runs of interface controls readable without dropping any of them:
  * a line of two or more buttons becomes one `[Buttons: A · B]` record, and
- * adjacent control tokens are separated by a space. Code fences are untouched.
+ * adjacent control tokens are separated by a space. Fenced code blocks and
+ * inline code spans are never changed.
  */
 export function tidyControls(markdown: string): string {
-  let fenced = false;
+  let fence: OpenFence | null = null;
   return markdown
     .split('\n')
     .map((line) => {
-      if (/^\s*(`{3,}|~{3,})/.test(line)) fenced = !fenced;
-      if (fenced || /^\s*(`{3,}|~{3,})/.test(line)) return line;
-      const run = /^(\s*(?:[-*+]\s+|\d+\.\s+)?)((?:\[Button: [^[\]]*\]\s*){2,})$/.exec(line);
+      if (fence) {
+        if (closesFence(line, fence)) fence = null;
+        return line;
+      }
+      const opener = fenceOpener(line);
+      if (opener) {
+        fence = opener;
+        return line;
+      }
+      const run = /^(\s*(?:[-*+]\s+|\d+\.\s+)?)((?:\[Button: [^[\]`]*\]\s*){2,})$/.exec(line);
       if (run) {
         const labels = Array.from(run[2].matchAll(/\[Button: ([^[\]]*)\]/g), (m) => m[1]);
         return `${run[1]}[Buttons: ${labels.join(' · ')}]`;
       }
-      return line
-        .replace(/\](?=\[(?:Button|Buttons|Link|Image|Icon)[:\]])/g, '] ')
-        .replace(/\)(?=\[(?:Button|Buttons|Image|Icon): )/g, ') ');
+      return outsideCodeSpans(line, (text) =>
+        text
+          .replace(/\](?=\[(?:Button|Buttons|Link|Image|Icon)[:\]])/g, '] ')
+          .replace(/\)(?=\[(?:Button|Buttons|Image|Icon): )/g, ') '),
+      );
     })
     .join('\n');
 }
@@ -259,6 +333,26 @@ function createTurndown(pageText = false, reader = false): TurndownService {
       },
     });
   }
+  // Inline code is literal: links, buttons and icons inside it are not rewritten,
+  // resolved or labeled. Uses a backtick fence longer than any run inside.
+  service.addRule('literalInlineCode', {
+    filter: (node) => node.nodeName === 'CODE' && node.parentNode?.nodeName !== 'PRE',
+    replacement: (_content, node) => {
+      const text = (node.textContent || '').replace(/\r?\n|\r/g, ' ');
+      if (!text.trim()) return text ? ' ' : '';
+      const longest = Math.max(0, ...Array.from(text.matchAll(/`+/g), (m) => m[0].length));
+      const fence = '`'.repeat(longest + 1);
+      const pad = /^`|`$|^ .* $/.test(text) ? ' ' : '';
+      const code = `${fence}${pad}${text}${pad}${fence}`;
+      // Code that is entirely one link (common in API docs) keeps its target,
+      // as a link around the code span rather than link syntax inside it.
+      const links = (node as HTMLElement).querySelectorAll('a[href]');
+      const href = links.length === 1 ? links[0].getAttribute('href') || '' : '';
+      if (href && links[0].textContent?.trim() === text.trim())
+        return `[${code}](${pageText ? `<${href}>` : markdownLinkTarget(href)})`;
+      return code;
+    },
+  });
   return service;
 }
 

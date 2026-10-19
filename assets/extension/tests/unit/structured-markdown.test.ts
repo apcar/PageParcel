@@ -188,3 +188,71 @@ describe('snapshot support for structured Markdown', () => {
     expect(markdown).not.toContain('[Icon: Forged by page]');
   });
 });
+
+describe('code is never rewritten (Codex review)', () => {
+  const literal = '[Button: Alpha][Button: Beta]';
+
+  it('keeps a four-backtick block that contains a triple-backtick line literal', () => {
+    const md = ['````', '```', literal, '```', literal, '````', literal].join('\n');
+    expect(tidyControls(md).split('\n')).toEqual([
+      '````',
+      '```',
+      literal,
+      '```',
+      literal,
+      '````',
+      '[Buttons: Alpha · Beta]',
+    ]);
+  });
+
+  it('does not close a tilde fence with backticks, or a long fence with a shorter one', () => {
+    expect(tidyControls(['~~~', '```', literal, '~~~', literal].join('\n')).split('\n')).toEqual([
+      '~~~',
+      '```',
+      literal,
+      '~~~',
+      '[Buttons: Alpha · Beta]',
+    ]);
+    expect(tidyControls(['`````', '````', literal, '`````'].join('\n'))).toContain(literal);
+  });
+
+  it('handles fences indented up to three spaces, inside list items, and unclosed fences', () => {
+    expect(tidyControls(['   ```', literal, '   ```', literal].join('\n')).split('\n')[1]).toBe(
+      literal,
+    );
+    expect(tidyControls(['-   item', '    ```', `    ${literal}`, '    ```'].join('\n'))).toContain(
+      `    ${literal}`,
+    );
+    expect(tidyControls(['```js', literal].join('\n'))).toContain(literal);
+    // A backtick "fence" whose info string contains a backtick is not a fence.
+    expect(tidyControls(['``` a`b', literal].join('\n'))).toContain('[Buttons: Alpha · Beta]');
+  });
+
+  it('leaves inline code spans alone but still spaces controls outside them', () => {
+    expect(tidyControls(`Use \`${literal}\` then [Image: x][Button: Go]`)).toBe(
+      `Use \`${literal}\` then [Image: x] [Button: Go]`,
+    );
+    expect(tidyControls(`\`\`a \` ${literal}\`\` ${literal}`)).toBe(
+      `\`\`a \` ${literal}\`\` [Button: Alpha] [Button: Beta]`,
+    );
+  });
+
+  it('does not resolve, label or drop links inside inline or block code', () => {
+    const markdown = buildStructuredMarkdown(
+      draft(`<html><body><main>
+        <p>Run <code>${literal}</code>, <code><a href="/rel">/rel</a></code> and <code><a href="#"></a>x</code>.</p>
+        <pre><code>\`\`\`
+${literal}
+<a href="/inside">/inside</a><a href="#"></a>
+\`\`\`</code></pre>
+        <p><a href="/out">out</a></p></main></body></html>`),
+    );
+    expect(markdown).toContain(`\`${literal}\``);
+    // Code that is wholly one link keeps its target outside the span.
+    expect(markdown).toContain('[`/rel`](https://console.example.test/rel)');
+    expect(markdown).not.toContain('`[/rel]');
+    expect(markdown).toContain(`\`\`\`\`\n\`\`\`\n${literal}\n/inside\n\`\`\`\n\`\`\`\``);
+    expect(markdown).not.toContain('[Link:');
+    expect(markdown).toContain('[out](https://console.example.test/out)');
+  });
+});
