@@ -2,7 +2,7 @@
 
 All notable changes to PageParcel are documented here.
 
-## 0.3.0 - 2026-10-18
+## 0.3.0 - 2026-10-21
 
 ### Added
 
