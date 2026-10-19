@@ -1,6 +1,6 @@
 {
   "name": "pageparcel",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Local-first web capture with screenshots, Markdown, metadata, and integrity hashes.",
   "license": "MIT",
   "type": "module",
@@ -8,10 +8,10 @@
   "author": "Andrew Greene <https://github.com/apcar>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/apcar/pageparcel.git"
+    "url": "https://github.com/apcar/PageParcel.git"
   },
-  "homepage": "https://github.com/apcar/pageparcel#readme",
-  "bugs": "https://github.com/apcar/pageparcel/issues",
+  "homepage": "https://github.com/apcar/PageParcel#readme",
+  "bugs": "https://github.com/apcar/PageParcel/issues",
   "keywords": [
     "chrome-extension",
     "screenshot",

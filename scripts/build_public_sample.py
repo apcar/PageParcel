@@ -80,7 +80,7 @@ def main() -> int:
     files = {"page.md": page, "page-reader.md": reader, "page-text.md": PAGE_TEXT_MD.encode("utf-8"), "page.png": png}
     manifest = {
         "schema_version": "1.1",
-        "generator": {"name": "PageParcel", "version": "0.2.0"},
+        "generator": {"name": "PageParcel", "version": "0.3.0"},
         "captured_at": "2026-07-21T17:00:00.000Z",
         "source": {
             "url": "https://pageparcel.co/sample",
