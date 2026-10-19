@@ -7,6 +7,8 @@ import zipfile
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUTPUT = ROOT / "docs" / "examples" / "PageParcel-Sample.zip"
+PAGE_TEXT_OUTPUT = ROOT / "docs" / "examples" / "PageParcel-Sample-Page-Text.md"
+VERSION = "0.3.0"
 PNG = ROOT / "docs" / "assets" / "pageparcel-sample-page.png"
 
 PAGE_MD = """# PageParcel Sample Page
@@ -73,6 +75,15 @@ def write_member(archive: zipfile.ZipFile, name: str, data: bytes) -> None:
     archive.writestr(info, data)
 
 
+def seal_page_text(markdown: str, version: str) -> str:
+    """Same construction as sealPageText() in the extension (src/pack/build.ts)."""
+    end = markdown.index("\n---\n")
+    unsealed = f"{markdown[:end]}\npageparcel_schema: page-text/1.0\ngenerator: \"PageParcel {version}\"{markdown[end:]}"
+    digest = hashlib.sha256(unsealed.encode("utf-8")).hexdigest()
+    close = unsealed.index("\n---\n")
+    return f"{unsealed[:close]}\npageparcel_sha256: {digest}{unsealed[close:]}"
+
+
 def main() -> int:
     page = PAGE_MD.encode("utf-8")
     reader = READER_MD.encode("utf-8")
@@ -80,7 +91,7 @@ def main() -> int:
     files = {"page.md": page, "page-reader.md": reader, "page-text.md": PAGE_TEXT_MD.encode("utf-8"), "page.png": png}
     manifest = {
         "schema_version": "1.1",
-        "generator": {"name": "PageParcel", "version": "0.3.0"},
+        "generator": {"name": "PageParcel", "version": VERSION},
         "captured_at": "2026-07-21T17:00:00.000Z",
         "source": {
             "url": "https://pageparcel.co/sample",
@@ -111,6 +122,8 @@ def main() -> int:
             write_member(archive, name, data)
         write_member(archive, "page.json", (json.dumps(manifest, indent=2) + "\n").encode("utf-8"))
     print(f"Built {OUTPUT}")
+    PAGE_TEXT_OUTPUT.write_bytes(seal_page_text(PAGE_TEXT_MD, VERSION).encode("utf-8"))
+    print(f"Built {PAGE_TEXT_OUTPUT}")
     return 0
 
 

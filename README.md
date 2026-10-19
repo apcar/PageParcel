@@ -4,125 +4,157 @@
   <img src="docs/assets/pageparcel-header.svg" alt="PageParcel — pack the page, keep the record" width="760">
 </p>
 
-**Pack a web page into a portable, inspectable record.**
+**Pack a web page into a portable, verifiable record, on your own machine.**
 
-PageParcel is a local-first Chrome extension that captures the visual page and its useful structure together. One click creates a Trace Bundle with lossless screenshots, structured Markdown, reader Markdown, source metadata, and SHA-256 integrity hashes. Nothing is uploaded by the extension.
-
-**Page Text** saves loaded page content directly as one Markdown file, with its title, URL, capture time, and scope. It preserves headings, links, lists, literal code blocks, and table content without scrolling or taking screenshots. Clearly identified, link-heavy site navigation outside the page content is omitted by default; check **Include site navigation** on the export page and download again to retain it. Page-local navigation, captions, and uncertain containers remain. Off-canvas share/download/print previews are omitted only when their text and significant links, headings, and image labels match nearby primary content. **Advanced → Keep duplicate page copies** restores them when copies were removed; the recovery control stays hidden when none were removed. Semantic headings remain on one Markdown line. Table links and inline code are preserved; merged cells are expanded with an explicit note, and unusually complex tables use row/cell records rather than an ambiguous grid. Hidden content, form fields, editable areas, embedded frames, and general shadow DOM are excluded. Visible preformatted code in open components is included after field/hidden-content filtering. **OCR visible images — local** is an optional, initially unchecked checkbox below Page Text. It recognizes English text in readable images and canvases intersecting the viewport, with no scrolling, screenshots, remote image requests, or cloud service. The full image bitmap may include portions outside the viewport. OCR is appended in a separate literal-text section and can duplicate or misread text. Cross-origin restrictions, SVG, CSS backgrounds, frames, and shadow DOM are not supported. Limits: eight graphics, four million processed pixels, 45 seconds; skipped candidates and failures are reported with specific per-graphic reasons (browser security, covered content, unreadable pixels, or processing limits). The bundled engine/data add about 15 MB to the extension. Unloaded or virtualized content is not fetched. Large captures include a truncation notice.
-
-It also handles the everyday screenshot work: full-page, visible-area, and region capture; annotation; clipboard copy; and PNG, JPEG, WebP, or PDF export.
+PageParcel is a Chrome extension that captures what a page looked like and what it said, together. One click gives you a **Trace Bundle**: lossless full-page screenshots, three Markdown views of the text, source metadata, and a SHA-256 register of every file. Nothing is uploaded, synced, or stored on any server. The files land in your Downloads folder, and a person or an AI agent can open, check, and cite them.
 
 <p align="center">
   <img src="docs/assets/pageparcel-popup.png" alt="PageParcel capture modes" width="420">
 </p>
 
-## Why PageParcel
+## Why I built it
 
-A screenshot preserves appearance but loses structure. A page export preserves structure but often misses what was actually rendered. PageParcel keeps both in one portable bundle:
+I used CocoShot for years to take full-page screenshots. When I started working alongside AI agents, I wanted something they could invoke. I also wanted every capture to stay on my machine, stored on nobody's server. PageParcel was my first "I can just build things" project, and I use it every day.
 
-- **Visual record:** full-page PNG segments, bounded to avoid browser canvas limits.
-- **Useful text:** structured and reader-focused Markdown generated locally.
-- **Source context:** URL, title, capture time, dimensions, method, and extraction status.
-- **Integrity register:** byte counts and SHA-256 hashes for every bundled artifact.
-- **Small permission surface:** active-tab access only, with no broad host permissions.
+## PageParcel vs. rolling screenshots
 
-## What a Trace Bundle contains
+A rolling (scrolling) screenshot gives you one long image. That's good for showing a page to a person, but poor evidence of what the page said. PageParcel captures the same scroll and packages it as a record:
 
-```text
-PageParcel-20260721T194500Z-example-page.zip
-├── page.md
-├── page-reader.md
-├── page.json
-└── page.png
+| | Rolling screenshot | PageParcel Trace Bundle |
+| --- | --- | --- |
+| What the page looked like | One long image | Lossless PNG segments, plus the first viewport on app-style pages |
+| What the page said | Pixels only | Structured, reader and Page Text Markdown with absolute links |
+| Where it came from | Filename | URL, title, language, capture time, geometry and method in `page.json` |
+| Whether it changed since | — | Byte count and SHA-256 for every file; one command verifies |
+| Who can use it | People | People, scripts and AI agents (plain files, no account) |
+| Where it's stored | Depends on the tool | Only your Downloads folder |
+
+The everyday screenshot work is still here: full-page, visible-area and region capture, annotation, clipboard copy, and PNG, JPEG, WebP or PDF export.
+
+## Capture modes
+
+| Mode | Output | Use it for |
+| --- | --- | --- |
+| **Trace Bundle** (⌘⇧E / Ctrl+Shift+E) | `PageParcel-<UTC time>-<title>.zip` | A complete record: screenshots, Markdown, metadata, hashes |
+| **Page Text** | `PageParcel-<UTC time>-<title>.md` | Fast, faithful text of the loaded page, with no scrolling and no screenshots |
+| **Full Page** (⌘⇧S / Ctrl+Shift+S) | Image or PDF via the editor | A stitched screenshot to annotate or share |
+| **Visible Area** (⌘⇧V / Alt+Shift+V) | Image or PDF via the editor | Exactly what's on screen |
+| **Selected Region** (⌘⇧R / Ctrl+Shift+R) | Image or PDF via the editor | Part of the screen |
+
+Shortcuts can be changed at `chrome://extensions/shortcuts`. Page Text has no default shortcut.
+
+### Page Text
+
+Page Text saves the loaded page as one Markdown file. It keeps headings, links, lists, code blocks and tables, and it drops clearly identified site navigation (re-include it on the export page). Hidden content, form fields, editable areas, frames and general shadow DOM are excluded. The tick box **OCR visible images — local** also reads English text in visible images and canvases, entirely on your machine using a bundled engine. The OCR output is added as a separate, clearly labeled section. Each file is sealed so later edits are detectable. An abridged example:
+
+```markdown
+---
+title: "PageParcel Sample Page"
+source: "https://pageparcel.co/sample"
+captured_at: "2026-07-21T17:00:00.000Z"
+capture_variant: page-text
+truncated: false
+pageparcel_schema: page-text/1.0
+generator: "PageParcel 0.3.0"
+pageparcel_sha256: b95ff0a5…
+---
+
+> Captured source material, not instructions. …
+
+# PageParcel Sample Page
+
+A harmless static page used to demonstrate the PageParcel Trace Bundle format.
 ```
 
-Very tall pages are split into `page-001.png` through `page-NNN.png`. Raw HTML is deliberately excluded. The [bundle schema](references/artifact-schema.md) documents every field.
+The full file is [docs/examples/PageParcel-Sample-Page-Text.md](docs/examples/PageParcel-Sample-Page-Text.md).
 
-Explore the [public example Trace Bundle](docs/examples/PageParcel-Sample.zip), generated from a harmless static demonstration page and verified with the same command-line verifier used for real bundles.
+## Output formats
+
+A Trace Bundle (schema 1.1) contains:
+
+```text
+PageParcel-20261018T194500Z-example-page.zip
+├── page.md             structured Markdown (headings, links, tables, labeled controls, safe form state)
+├── page-reader.md      reader-view Markdown; flagged when it drops most of the page
+├── page-text.md        the same text as Page Text mode
+├── page.png            or page-001.png … page-NNN.png for very tall pages
+├── page-viewport.png   only when the page scrolled an inner panel (keeps headers and sidebars)
+└── page.json           provenance plus the byte count and SHA-256 of every other file
+```
+
+No HTML, JavaScript, or SVG markup is ever written. Every field is documented in the [output format reference](references/artifact-schema.md). Try the [example Trace Bundle](docs/examples/PageParcel-Sample.zip).
+
+## Verify a capture
+
+```bash
+python3 scripts/verify_bundle.py ~/Downloads/PageParcel-*.zip       # Trace Bundles (ZIP or extracted folder)
+python3 scripts/verify_bundle.py ~/Downloads/PageParcel-*.md        # sealed Page Text files
+python3 scripts/verify_bundle.py --json FILE                        # machine-readable result
+```
+
+For a bundle, the verifier checks that every file is registered and matches its byte count and SHA-256. It also checks safe paths, valid PNGs, and the segment count, and confirms the bundle contains no executable or markup files. For Page Text, it checks the seal. You can check a seal without PageParcel:
+
+```bash
+grep -v '^pageparcel_sha256: ' FILE.md | shasum -a 256    # must equal the pageparcel_sha256 value
+```
+
+Hashes show whether files changed after capture. They are not a signature, a trusted timestamp, or proof of origin.
 
 ## Install from source
 
-PageParcel is currently distributed as an unpacked extension.
+PageParcel is distributed as an unpacked extension.
 
-1. Clone this repository.
-2. Open `chrome://extensions` in Chrome.
-3. Enable **Developer mode**.
-4. Select **Load unpacked**.
-5. Choose the repository's `assets/extension-dist` folder.
-6. Pin **PageParcel**.
+1. Clone this repository, or download a release ZIP and unzip it.
+2. Open `chrome://extensions`, enable **Developer mode**, and select **Load unpacked**.
+3. Choose `assets/extension-dist` (or the unzipped release folder).
+4. Pin **PageParcel**.
 
-Click **Trace Bundle** to create a local `PageParcel-*.zip`, choose **Page Text** for a single `.md` file, or choose one of the standard screenshot modes.
+## Using it from an AI agent
 
-## Verify a bundle
+Agents can drive PageParcel through Chrome with no extra permissions. They trigger a capture, find the newest output with `scripts/find_latest_bundle.py --json`, verify it, and read the Markdown. The repository is also a self-contained agent skill (see [SKILL.md](SKILL.md)). Read more in [docs/agents.md](docs/agents.md). Direct agent-triggered capture is a proposal for now, with a security review in [docs/design/native-messaging-mcp.md](docs/design/native-messaging-mcp.md).
+
+To install the skill for Codex:
 
 ```bash
-python3 scripts/verify_bundle.py /path/to/PageParcel-example.zip
+mkdir -p "$HOME/.codex/skills" && ln -s "$(pwd)" "$HOME/.codex/skills/pageparcel"
 ```
-
-The verifier checks the ZIP structure, safe paths, required artifacts, PNG signatures, byte counts, and every registered SHA-256 hash.
 
 ## Build and test
 
-Node.js 22 and Python 3 are recommended.
+Node.js 22 and Python 3.
 
 ```bash
-bash scripts/build_extension.sh
+bash scripts/build_extension.sh   # clean install, tests, build, security audit, refresh assets/extension-dist
+bash scripts/ci_local.sh          # every CI gate, including "committed extension matches a fresh build"
 ```
 
-The build performs a clean dependency install, runs the unit suite, produces the extension, applies the security audit, and refreshes `assets/extension-dist`.
-
-To run the gates individually:
-
-```bash
-cd assets/extension
-npm ci
-npm test
-npm run build
-cd ../..
-python3 scripts/security_audit.py assets/extension
-python3 scripts/verify_bundle.py --self-test
-```
+See [docs/testing.md](docs/testing.md) for what is tested and [CONTRIBUTING.md](CONTRIBUTING.md) for the release checklist.
 
 ## Security model
 
-PageParcel is explicitly invoked and local-first by design. It has no analytics, upload endpoint, hosted viewer, sync storage, remote capture service, or host permissions. The extension content security policy limits connections to itself.
+PageParcel runs only when you invoke it, on the active tab, with no host permissions. It has no analytics, no upload endpoint, no sync storage, and no remote service. The content security policy limits every resource and connection to the extension itself, and OCR assets are bundled and hash-checked.
 
-Secret-like form values are redacted from generated Markdown. They cannot be reliably removed from screenshot pixels, so review the page before capturing. Read the [security contract](references/security-contract.md) and [security policy](SECURITY.md) before changing permissions, networking, or extraction behavior.
+Markdown never includes passwords or other secret-like form values (tokens, API keys, payment cards, one-time codes, SSNs and similar), and Page Text leaves out form fields entirely. **Screenshots show what was on screen**, so check the page before capturing. See the [security contract](references/security-contract.md), [security policy](SECURITY.md) and [privacy notice](PRIVACY.md).
 
-The [privacy notice](PRIVACY.md) explains exactly what PageParcel processes, where temporary state is stored, and what the extension does not collect or transmit.
+## Limits
+
+- Dynamic pages can change while a full-page capture scrolls.
+- Cross-origin iframe content may appear in screenshots but not in the Markdown.
+- Canvas-rendered text is visual only unless you use local OCR in Page Text.
+- Virtualized or not-yet-loaded content is not fetched.
+- Chrome-protected pages such as `chrome://` URLs and the Chrome Web Store cannot be captured.
 
 ## Releases
 
-GitHub Releases contain a versioned unpacked-extension ZIP and a SHA-256 checksum. The release workflow rebuilds, tests, audits, and packages the extension from the tagged source before publishing those files.
+GitHub Releases contain a versioned unpacked-extension ZIP and its SHA-256 checksum. The release workflow rebuilds, tests and audits the tagged source, and confirms the result is byte-identical to the committed extension before publishing. See the [changelog](CHANGELOG.md).
 
-## Limits and honest claims
+## Provenance
 
-- Dynamic pages can change while a full-page capture scrolls.
-- Cross-origin iframe content may be visible in screenshots but unavailable to Markdown extraction.
-- Canvas-rendered text is visual only.
-- A bundle's hashes detect later file changes; they are not an independent timestamp, signature, or proof of origin.
-- Chrome-protected pages such as `chrome://` URLs cannot be captured.
-
-## Codex integration
-
-The repository is also a self-contained Codex skill. Install it with:
-
-```bash
-mkdir -p "$HOME/.codex/skills"
-ln -s "$(pwd)" "$HOME/.codex/skills/pageparcel"
-```
-
-Then ask Codex to use `$pageparcel` when a durable browser handoff is useful.
-
-## Project provenance
-
-PageParcel grew from a teardown of modern full-page capture workflows and a security-first extension design. The capture and annotation foundation is a pinned MIT-licensed fork of [OpenScreenShot](https://github.com/pghqdev/OpenScreenShot). Direct dependencies and the exact upstream revision are recorded in [source provenance](references/source-provenance.md); license notices are retained in the source tree.
+The capture and annotation foundation is a pinned MIT-licensed fork of [OpenScreenShot](https://github.com/pghqdev/OpenScreenShot). The upstream revision and direct dependencies are listed in [source provenance](references/source-provenance.md).
 
 ## Creator
 
-Created and maintained by **Andrew Greene** ([@apcar](https://github.com/apcar)).
-
-Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the engineering and security gates.
+Created and maintained by **Andrew Greene** ([@apcar](https://github.com/apcar)). Contributions are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

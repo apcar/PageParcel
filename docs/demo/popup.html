@@ -49,10 +49,14 @@
         </button>
       </header>
       <nav class="modes" aria-label="Capture modes">
-        <button class="mode-card"><span class="mode-icon">📦</span><span class="mode-text"><span class="mode-title">Trace Bundle</span><span class="mode-sub">Screenshot, Markdown, metadata, and hashes</span></span><kbd>⌘⇧1</kbd></button>
-        <button class="mode-card"><span class="mode-icon">📄</span><span class="mode-text"><span class="mode-title">Full Page</span><span class="mode-sub">Capture the entire scrollable page</span></span><kbd>⌘⇧2</kbd></button>
-        <button class="mode-card"><span class="mode-icon">👁</span><span class="mode-text"><span class="mode-title">Visible Area</span><span class="mode-sub">Capture what is currently visible</span></span><kbd>⌘⇧3</kbd></button>
-        <button class="mode-card"><span class="mode-icon">✂️</span><span class="mode-text"><span class="mode-title">Region</span><span class="mode-sub">Select a precise area to capture</span></span><kbd>⌘⇧4</kbd></button>
+        <div><button class="mode-card"><span class="mode-icon" aria-hidden="true">📦</span><span class="mode-text"><span class="mode-title">Trace Bundle</span><span class="mode-sub">Screenshot + Markdown + metadata + hashes</span></span><kbd>⌘⇧E</kbd></button></div>
+        <div>
+          <button class="mode-card"><span class="mode-icon" aria-hidden="true">📝</span><span class="mode-text"><span class="mode-title">Page Text</span><span class="mode-sub">Save page text as Markdown</span></span></button>
+          <label class="ocr-option"><input type="checkbox" /><span>OCR visible images — local<small>English · current screen only · slower</small></span></label>
+        </div>
+        <div><button class="mode-card"><span class="mode-icon" aria-hidden="true">📄</span><span class="mode-text"><span class="mode-title">Full Page</span><span class="mode-sub">Capture entire scrolling page</span></span><kbd>⌘⇧S</kbd></button></div>
+        <div><button class="mode-card"><span class="mode-icon" aria-hidden="true">👁</span><span class="mode-text"><span class="mode-title">Visible Area</span><span class="mode-sub">What you see right now</span></span><kbd>⌘⇧V</kbd></button></div>
+        <div><button class="mode-card"><span class="mode-icon" aria-hidden="true">✂️</span><span class="mode-text"><span class="mode-title">Selected Region</span><span class="mode-sub">Click &amp; drag to select</span></span><kbd>⌘⇧R</kbd></button></div>
       </nav>
       <div class="divider"></div>
       <button class="link-btn">Customize keyboard shortcuts</button>

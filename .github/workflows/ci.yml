@@ -54,8 +54,9 @@ jobs:
       - name: Verify public example bundle
         run: |
           python3 scripts/build_public_sample.py
-          python3 scripts/verify_bundle.py docs/examples/PageParcel-Sample.zip
-          git diff --exit-code -- docs/examples/PageParcel-Sample.zip
+          python3 scripts/verify_bundle.py docs/examples/PageParcel-Sample.zip docs/examples/PageParcel-Sample-Page-Text.md
+          git diff --exit-code -- docs/examples/
+          test -z "$(git status --porcelain -- docs/examples/)"
 
       - name: Committed unpacked extension matches source build
         run: diff -r assets/extension/dist assets/extension-dist

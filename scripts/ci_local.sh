@@ -24,8 +24,9 @@ cd "$root"
 step "security audit";    python3 scripts/security_audit.py assets/extension
 step "verifier self-test"; python3 scripts/verify_bundle.py --self-test
 step "public sample";     python3 scripts/build_public_sample.py
-python3 scripts/verify_bundle.py docs/examples/PageParcel-Sample.zip
-git diff --exit-code -- docs/examples/PageParcel-Sample.zip
+python3 scripts/verify_bundle.py docs/examples/PageParcel-Sample.zip docs/examples/PageParcel-Sample-Page-Text.md
+git diff --exit-code -- docs/examples/
+test -z "$(git status --porcelain -- docs/examples/)"
 step "committed extension-dist matches fresh build"
 diff -r assets/extension/dist assets/extension-dist
 echo
