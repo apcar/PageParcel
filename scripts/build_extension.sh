@@ -11,6 +11,10 @@ npm test
 npm run build
 python3 "$skill_root/scripts/security_audit.py" "$extension_root"
 
-mkdir -p "$dist_root"
-rsync -a --delete "$extension_root/dist/" "$dist_root/"
+if command -v rsync >/dev/null 2>&1; then
+  rsync -a --delete "$extension_root/dist/" "$dist_root/"
+else
+  rm -rf "$dist_root"
+  cp -R "$extension_root/dist" "$dist_root"
+fi
 echo "Built unpacked extension: $dist_root"
