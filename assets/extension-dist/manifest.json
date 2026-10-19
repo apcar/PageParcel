@@ -31,7 +31,7 @@
   ],
   "host_permissions": [],
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; object-src 'none'; connect-src 'self'; img-src 'self' data: blob:; media-src 'none'; frame-src 'none';"
+    "extension_pages": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; object-src 'none'; connect-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; media-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none';"
   },
   "options_ui": {
     "page": "src/editor/index.html",

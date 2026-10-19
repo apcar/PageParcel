@@ -12,7 +12,7 @@ step() { printf '\n==> %s\n' "$*"; }
 cd "$ext"
 if [[ "${PAGEPARCEL_CLEAN_INSTALL:-0}" == "1" || ! -d node_modules ]]; then
   step "npm ci"
-  npm ci
+  npm ci --ignore-scripts
 fi
 step "format check";      npm run format:check
 step "lint";              npm run lint

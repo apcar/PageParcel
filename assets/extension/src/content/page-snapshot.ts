@@ -24,8 +24,18 @@ export function collectPageSnapshot(textOnly = false): PageSnapshot {
   const clone = source.cloneNode(true) as HTMLElement;
   const originals = Array.from(source.querySelectorAll<HTMLElement>('*'));
   const copies = Array.from(clone.querySelectorAll<HTMLElement>('*'));
+  // Matched against name, id, autocomplete, type, aria-label and placeholder.
   const secretPattern =
-    /(password|passwd|secret|token|api[-_ ]?key|authorization|credit[-_ ]?card)/i;
+    /(pass(word|wd|code|phrase)|secret|token|api[-_ ]?key|authori[sz]ation|bearer|credit[-_ ]?card|card[-_ ]?(number|num|no)\b|cc-(number|csc|exp)|\bcvv\b|\bcvc\b|\bcsc\b|security[-_ ]?code|one[-_ ]?time[-_ ]?(code|password|pin)|\botp\b|\bssn\b|social[-_ ]?security|private[-_ ]?key|\biban\b|routing[-_ ]?number|account[-_ ]?number)/i;
+  const describe = (el: HTMLInputElement | HTMLTextAreaElement) =>
+    [
+      el.name,
+      el.id,
+      el.getAttribute('autocomplete') || '',
+      el.getAttribute('type') || '',
+      el.getAttribute('aria-label') || '',
+      el.getAttribute('placeholder') || '',
+    ].join(' ');
 
   for (let i = 0; i < copies.length; i++) {
     const original = originals[i];
@@ -80,11 +90,18 @@ export function collectPageSnapshot(textOnly = false): PageSnapshot {
     }
 
     for (const attr of Array.from(copy.attributes)) {
-      if (attr.name.startsWith('on') || attr.name === 'srcdoc') copy.removeAttribute(attr.name);
+      if (
+        attr.name.startsWith('on') ||
+        attr.name === 'srcdoc' ||
+        // Script-bearing URLs never reach the snapshot, even though Markdown drops them too.
+        (/^(href|src|action|formaction|xlink:href)$/.test(attr.name) &&
+          /^\s*(javascript|vbscript|data):/i.test(attr.value))
+      )
+        copy.removeAttribute(attr.name);
     }
 
     if (original instanceof HTMLInputElement && copy instanceof HTMLInputElement) {
-      const descriptor = `${original.name} ${original.id} ${original.autocomplete} ${original.type}`;
+      const descriptor = describe(original);
       if (original.type === 'hidden') {
         copy.remove();
       } else if (original.type === 'password' || secretPattern.test(descriptor)) {
@@ -97,7 +114,7 @@ export function collectPageSnapshot(textOnly = false): PageSnapshot {
         copy.setAttribute('value', original.value);
       }
     } else if (original instanceof HTMLTextAreaElement && copy instanceof HTMLTextAreaElement) {
-      copy.textContent = original.value;
+      copy.textContent = secretPattern.test(describe(original)) ? '[REDACTED]' : original.value;
     } else if (original instanceof HTMLSelectElement && copy instanceof HTMLSelectElement) {
       Array.from(copy.options).forEach((option, index) => {
         option.toggleAttribute('selected', original.options[index]?.selected ?? false);
