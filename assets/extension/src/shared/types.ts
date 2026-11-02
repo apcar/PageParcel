@@ -151,13 +151,13 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   defaultFormat: 'png',
-  theme: 'system',
+  theme: 'light',
   pdfPageSize: 'a4',
   pdfOrientation: 'portrait',
   pdfMultiPage: true,
   pdfMarginMm: 8,
   quality: 0.92,
-  filenameTemplate: 'screenshot_{date}_{time}',
+  filenameTemplate: '{date}_{title}',
   showOnboarding: true,
   annotationColor: '#ff3b30',
   annotationStrokeWidth: 6,

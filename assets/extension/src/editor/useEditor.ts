@@ -36,6 +36,7 @@ import {
   type Tool,
 } from './tools';
 import type { LastCapture, Settings } from '../shared/types';
+import { DEFAULT_SETTINGS } from '../shared/types';
 import { getLastCapture, getSettings, setSettings } from '../shared/storage';
 import { formatFilename } from '../shared/utils';
 import { canvasToDataUrl, downloadDataUrl, withExtension, type ImageFormat } from './export';
@@ -642,7 +643,7 @@ export function useEditor() {
   const resetZoom = useCallback(() => controllerRef.current?.resetZoom(), []);
 
   const defaultFilename = useCallback(() => {
-    const tmpl = settings?.filenameTemplate ?? 'screenshot_{date}_{time}';
+    const tmpl = settings?.filenameTemplate ?? DEFAULT_SETTINGS.filenameTemplate;
     return formatFilename(tmpl, {
       width: imageSize?.w ?? 0,
       height: imageSize?.h ?? 0,

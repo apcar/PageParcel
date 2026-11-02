@@ -6,11 +6,7 @@
 
 **Pack a web page into a portable, verifiable record, on your own machine.**
 
-PageParcel is a Chrome extension that captures what a page looked like and what it said, together. One click gives you a **Trace Bundle**: lossless full-page screenshots, three Markdown views of the text, source metadata, and a SHA-256 register of every file. Nothing is uploaded, synced, or stored on any server. The files land in your Downloads folder, and a person or an AI agent can open, check, and cite them.
-
-<p align="center">
-  <img src="docs/assets/pageparcel-popup.png" alt="PageParcel capture modes" width="420">
-</p>
+PageParcel is a Chrome extension that captures what a page looked like and what it said, together. One click on **Save Page** gives you a **Trace Bundle**: lossless full-page screenshots, three Markdown views of the text, source metadata, and a SHA-256 register of every file. Nothing is uploaded, synced, or stored on any server. The files land in your Downloads folder, and a person or an AI agent can open, check, and cite them.
 
 ## Why I built it
 
@@ -33,15 +29,37 @@ The everyday screenshot work is still here: full-page, visible-area and region c
 
 ## Capture modes
 
-| Mode | Output | Use it for |
-| --- | --- | --- |
-| **Trace Bundle** (⌘⇧E / Ctrl+Shift+E) | `PageParcel-<UTC time>-<title>.zip` | The full record: screenshots, Markdown, metadata, hashes |
-| **Page Text** | `PageParcel-<UTC time>-<title>.md` | Fast, faithful text of the loaded page, with no scrolling and no screenshots |
-| **Full Page** (⌘⇧S / Ctrl+Shift+S) | Image or PDF via the editor | A stitched screenshot to annotate or share |
-| **Visible Area** (⌘⇧V / Alt+Shift+V) | Image or PDF via the editor | Exactly what's on screen |
-| **Selected Region** (⌘⇧R / Ctrl+Shift+R) | Image or PDF via the editor | Part of the screen |
+The popup has one main button and four smaller options.
 
-Shortcuts can be changed at `chrome://extensions/shortcuts`. Page Text has no default shortcut.
+<p align="center">
+  <img src="docs/assets/pageparcel-popup.png" alt="The PageParcel popup: a blue Save Page button above a Just one part list" width="420">
+</p>
+
+| In the popup | Mode | Output | Use it for |
+| --- | --- | --- | --- |
+| **Save Page** (⌘⇧E / Ctrl+Shift+E) | Trace Bundle | `PageParcel-<UTC time>-<title>.zip` | The full record: screenshots, Markdown, metadata, and hashes |
+| **Text only** | Page Text | `PageParcel-<UTC time>-<title>.md` | Fast, faithful text of the loaded page, with no scrolling and no screenshots |
+| **Full page image** | Full Page | Image or PDF via the editor | A stitched screenshot to annotate or share |
+| **Visible area image** | Visible Area | Image or PDF via the editor | Exactly what's on screen |
+| **Select image area** | Selected Region | Image or PDF via the editor | Part of the screen |
+
+The other three image modes keep their keyboard shortcuts (⌘⇧S, ⌘⇧V, and ⌘⇧R on a Mac), but only the Save Page shortcut is shown in the popup. Change any of them at `chrome://extensions/shortcuts`. Text only has no default shortcut.
+
+## Settings
+
+Open Settings with the gear icon in the popup.
+
+| Section | Setting | Default | Notes |
+| --- | --- | --- | --- |
+| Appearance | Theme | Light | Light, Dark, or System |
+| Saving | Default format | PNG | PNG, JPEG, WebP, or PDF, for images saved from the editor |
+| Saving | Quality | 92% | Shown only for JPEG and WebP |
+| Saving | File name | `{date}_{title}` | Tokens: `{date}`, `{time}`, `{title}`, `{w}`, and `{h}`. The title drops characters that macOS and Windows don't allow, collapses spaces, stops at 80 characters, and falls back to `page`. Trace Bundles and Page Text files keep their own fixed names. |
+| PDF | Page size | A4 | A4, Letter, or Full (one page sized to the image). Shown when the default format is PDF, and collapsed otherwise. |
+| PDF | Orientation | Portrait | Not used with Full |
+| PDF | Multi-page | On | Not used with Full |
+| PDF | Margin | 8 mm | Not used with Full |
+| Keyboard shortcuts | Save Page | ⌘⇧E / Ctrl+Shift+E | "Change in Chrome" opens `chrome://extensions/shortcuts` |
 
 ### Page Text
 

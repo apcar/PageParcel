@@ -37,8 +37,8 @@ Changes to permissions, CSP, networking, data retention, redaction, DOM sanitiza
 2. Add a `CHANGELOG.md` entry. Update `references/source-provenance.md` and `assets/extension/THIRD_PARTY_NOTICES.md` if runtime dependencies changed.
 3. Run `bash scripts/build_extension.sh`, then `bash scripts/ci_local.sh`, and commit the refreshed `assets/extension-dist` and `docs/examples/`.
 4. In Chrome, load `assets/extension-dist` unpacked and check:
-   - **Trace Bundle** on an ordinary article. Run `python3 scripts/verify_bundle.py` on the ZIP and confirm the screenshot has no repeated headers or scrollbars.
-   - **Trace Bundle** on an app page that scrolls an inner panel (webmail, a dashboard). Expect `page-viewport.png`, the full panel in `page.png`, and no repeated scrollbar thumbs.
+   - **Save Page** (Trace Bundle) on an ordinary article. Run `python3 scripts/verify_bundle.py` on the ZIP and confirm the screenshot has no repeated headers or scrollbars.
+   - **Save Page** on an app page that scrolls an inner panel (webmail, a dashboard). Expect `page-viewport.png`, the full panel in `page.png`, and no repeated scrollbar thumbs.
    - **Page Text**. Verify the `.md` with the verifier.
    - On the Page Text export page, toggle **Include site navigation**, download again, and confirm the new file verifies.
    - A form with a password and a card-number field: both read `[REDACTED]` in `page.md`.

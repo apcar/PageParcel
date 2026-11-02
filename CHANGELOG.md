@@ -10,6 +10,9 @@ All notable changes to PageParcel are documented here.
 
 ### Added
 
+- **A simpler popup.** A light theme by default, with one blue **Save Page** button (Trace Bundle) and a "Just one part" list: Text only, Full page image, Visible area image, and Select image area. Line icons replace emoji. Only the Save Page shortcut is shown, and the shortcut link moved into Settings.
+- **A grouped Settings screen.** Appearance, Saving, PDF, and Keyboard shortcuts. Quality appears only for JPEG and WebP, and PDF options are collapsed unless PDF is the default format.
+- **Readable default file names.** Editor exports now default to `{date}_{title}`. Titles lose characters that macOS and Windows don't allow, collapse whitespace, stop at 80 characters, and fall back to `page`.
 - **Page Text**: a standalone Markdown capture of the visible page text, with conservative navigation cleanup, heading and boundary preservation, export-copy filtering, and an Advanced option for duplicate recovery.
 - **Verifiable Page Text.** Each file carries `pageparcel_schema: page-text/1.0`, a `generator` line, and a `pageparcel_sha256` seal over its own contents.
 - **Trace Bundle schema 1.1.**
