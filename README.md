@@ -26,7 +26,7 @@ PageParcel began as my first "I can just build things" project. I use it every d
 - Treating an everyday tool as **evidence infrastructure**, with outputs that can be checked later.
 - **Designing for agents** without handing them authority: they capture through the same browser UI, read and verify records, and people decide.
 - **Honest scoping.** In 0.3.0 I removed local OCR, cutting the unpacked extension from about 15 MB to about 0.5 MB, and documented exactly what that costs.
-- **Discipline on a small project:** a schema, a verifier, a local CI script, a security audit, and 123 automated tests.
+- **Discipline on a small project:** a schema, a verifier, a local CI script, a security audit, and 126 automated tests.
 
 PageParcel is a fork of [OpenScreenShot](https://github.com/pghqdev/OpenScreenShot) (MIT) and keeps its everyday screenshot, annotation, and export tools.
 
