@@ -194,6 +194,10 @@ Password fields show only their masking dots, but nothing else is hidden. Review
 - Virtualized or not-yet-loaded content is not fetched.
 - Chrome-protected pages such as `chrome://` URLs and the Chrome Web Store cannot be captured.
 
+## Download names
+
+Other extensions can override Chrome's download names. If Text only saves as a UUID or an image saves as `download.png`, temporarily disable download-manager extensions and retry. In local Chrome testing, disabling CocoCut restored PageParcel's date/title/type names without changing the capture code. The capture verifier can still check a renamed file when you supply its path explicitly; the latest-capture finder depends on recognizable file names.
+
 ## Releases
 
 GitHub Releases contain a versioned unpacked-extension ZIP and its SHA-256 checksum. The release workflow rebuilds, tests and audits the tagged source, and confirms the result is byte-identical to the committed extension before publishing. See the [changelog](CHANGELOG.md).

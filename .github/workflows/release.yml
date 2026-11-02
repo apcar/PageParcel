@@ -46,4 +46,4 @@ jobs:
           "release/PageParcel-${GITHUB_REF_NAME#v}.zip"
           "release/PageParcel-${GITHUB_REF_NAME#v}.zip.sha256"
           --title "PageParcel ${GITHUB_REF_NAME#v}"
-          --generate-notes
+          --notes-file "docs/releases/${GITHUB_REF_NAME#v}.md"
