@@ -31,7 +31,6 @@ import {
   scrollToPosition,
   stitchTiles,
 } from '../content/scroll-capture';
-import { collectOcrImages } from '../content/ocr-regions';
 import { selectRegion } from '../content/region-select';
 import { collectPageSnapshot, stitchTileSegment } from '../content/page-snapshot';
 
@@ -56,12 +55,12 @@ chrome.commands.onCommand.addListener((command) => {
 
 chrome.runtime.onMessage.addListener((message: unknown) => {
   if (isCaptureRequest(message)) {
-    void handleCapture(message.mode, message.ocr === true).catch(onCaptureError);
+    void handleCapture(message.mode).catch(onCaptureError);
   }
   return false; // synchronous: no async sendResponse
 });
 
-async function handleCapture(mode: CaptureMode, ocr = false): Promise<void> {
+async function handleCapture(mode: CaptureMode): Promise<void> {
   const tab = await getActiveTab();
   if (!tab || tab.id == null) {
     broadcast({ type: 'CAPTURE_ERROR', code: 'unknown', message: 'No active tab found.' });
@@ -77,7 +76,7 @@ async function handleCapture(mode: CaptureMode, ocr = false): Promise<void> {
   }
   switch (mode) {
     case 'page-text':
-      await capturePageText(tab, ocr);
+      await capturePageText(tab);
       return;
     case 'pack':
       await capturePack(tab);
@@ -234,26 +233,10 @@ async function captureFullPage(tab: chrome.tabs.Tab): Promise<void> {
   });
 }
 
-async function capturePageText(tab: chrome.tabs.Tab, ocr: boolean): Promise<void> {
+async function capturePageText(tab: chrome.tabs.Tab): Promise<void> {
   const snapshot = await execInTab(tab.id as number, collectPageSnapshot, [true]);
-  if (ocr) {
-    // Session memory only, and prune abandoned old OCR drafts on the next capture.
-    const drafts = (await chrome.storage.session.get(null)) as Record<
-      string,
-      { capturedAt?: string } | null
-    >;
-    const stale = Object.entries(drafts)
-      .filter(
-        ([key, value]) =>
-          key.startsWith('pageparcel:text:') &&
-          (!value?.capturedAt || !(Date.parse(value.capturedAt) > Date.now() - 300_000)),
-      )
-      .map(([key]) => key);
-    if (stale.length) await chrome.storage.session.remove(stale);
-    snapshot.ocr = await execInTab(tab.id as number, collectOcrImages, []);
-  }
   const key = `pageparcel:text:${crypto.randomUUID()}`;
-  const storage = ocr ? chrome.storage.session : chrome.storage.local;
+  const storage = chrome.storage.local;
   await storage.set({ [key]: snapshot });
   try {
     await chrome.tabs.create({ url: `${EDITOR_URL}#text=${encodeURIComponent(key)}` });

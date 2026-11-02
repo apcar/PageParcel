@@ -519,8 +519,7 @@ export function buildPageText(
   const presentationRemoved = includePresentationCopies ? 0 : removePresentationCopies(doc);
   const navigationRemoved = includeNavigation ? 0 : removeSiteNavigation(doc);
   const body = tidyControls(createTurndown(true).turndown(doc.body?.innerHTML || '')).trim();
-  if (!body && !snapshot.ocr)
-    throw new Error('No page text was found. Try a screenshot for graphical content.');
+  if (!body) throw new Error('No page text was found. Try a screenshot for graphical content.');
   const metadata = frontMatter({ snapshot }, 'page-text').replace(
     '\n---\n',
     `\ntruncated: ${snapshot.truncated}\nsite_navigation_blocks_removed: ${navigationRemoved}\npresentation_copies_removed: ${presentationRemoved}\nopen_component_code_blocks: ${snapshot.shadowCodeBlocks || 0}\n---\n\n`,
@@ -534,7 +533,7 @@ export function buildPageText(
     ? '> Capture limit reached: text may be incomplete and formatting was simplified.\n'
     : '';
   return {
-    markdown: `${metadata}${snapshot.ocr ? limits.replace('no scrolling, OCR,', 'no scrolling,').replace('Image labels are not OCR.', 'Image labels are not OCR; separately recognized text is appended below.') : limits}${warning}${componentNotice}${presentationRemoved ? '> Matching off-canvas presentation copies omitted. Use Advanced → Keep duplicate page copies on the export page to retain them.\n' : ''}${navigationRemoved ? '> Site navigation omitted. Use Include site navigation on the export page to retain it.\n' : ''}\n${body}\n`,
+    markdown: `${metadata}${limits}${warning}${componentNotice}${presentationRemoved ? '> Matching off-canvas presentation copies omitted. Use Advanced → Keep duplicate page copies on the export page to retain them.\n' : ''}${navigationRemoved ? '> Site navigation omitted. Use Include site navigation on the export page to retain it.\n' : ''}\n${body}\n`,
     filename: `PageParcel-${timestampStem(snapshot.capturedAt)}-${safeFileStem(snapshot.title)}.md`,
     presentationCopiesRemoved: presentationRemoved,
   };

@@ -517,15 +517,3 @@ body {
 .modes > div > .mode-card {
   width: 100%;
 }
-.ocr-option {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  margin: 6px 8px 2px;
-  font-size: 12px;
-}
-.ocr-option small {
-  display: block;
-  color: var(--text-2);
-  font-size: 11px;
-}

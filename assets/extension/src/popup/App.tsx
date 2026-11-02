@@ -71,7 +71,6 @@ export function App() {
   const [settings, setSettingsState] = useState<Settings>(DEFAULT_SETTINGS);
   const [showWelcome, setShowWelcome] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [ocr, setOcr] = useState(false);
   const [busy, setBusy] = useState<CaptureMode | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -137,13 +136,11 @@ export function App() {
       return;
     }
     setProgress(0);
-    sendToBackground({ type: 'CAPTURE_REQUEST', mode, ocr: mode === 'page-text' && ocr }).catch(
-      () => {
-        setBusy(null);
-        setProgress(null);
-        pushToast(t('couldNotReach'), 'error');
-      },
-    );
+    sendToBackground({ type: 'CAPTURE_REQUEST', mode }).catch(() => {
+      setBusy(null);
+      setProgress(null);
+      pushToast(t('couldNotReach'), 'error');
+    });
   }
 
   async function dismissWelcome() {
@@ -226,20 +223,6 @@ export function App() {
                       </div>
                     ) : null}
                   </button>
-                  {m.id === 'page-text' && (
-                    <label class="ocr-option">
-                      <input
-                        type="checkbox"
-                        checked={ocr}
-                        disabled={!!busy}
-                        onChange={(e) => setOcr(e.currentTarget.checked)}
-                      />
-                      <span>
-                        OCR visible images — local
-                        <small>English · current screen only · slower</small>
-                      </span>
-                    </label>
-                  )}
                 </div>
               );
             })}

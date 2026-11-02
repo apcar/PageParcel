@@ -5,6 +5,5 @@ release/
 PageParcel-*.zip
 npm-debug.log*
 
-assets/extension/public/ocr/
 __pycache__/
 *.pyc

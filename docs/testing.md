@@ -11,14 +11,14 @@ This page summarizes how PageParcel is tested and what has and has not been veri
 | `npm run format:check` | Prettier formatting |
 | `npm run lint` | ESLint and typescript-eslint rules |
 | `npm run typecheck` | Strict TypeScript |
-| `npm test` | Vitest unit suite (Markdown structure, redaction, tables, navigation cleanup, OCR limits and skip reasons, bundle construction, Page Text routing, PDF writer, geometry) |
-| `npm run build` | Production Vite build, including bundled OCR assets |
-| `scripts/security_audit.py` | Manifest permissions, empty host permissions, CSP, no first-party network APIs, synchronous Defuddle, pinned OCR assets and their hashes |
+| `npm test` | Vitest unit suite (Markdown structure, redaction, tables, navigation cleanup, bundle construction, Page Text routing, PDF writer, geometry) |
+| `npm run build` | Production Vite build |
+| `scripts/security_audit.py` | Manifest permissions, empty host permissions, CSP, no first-party network APIs, synchronous Defuddle, no OCR assets or dependencies |
 | `scripts/verify_bundle.py --self-test` | The verifier rejects tampered, unsafe, or incomplete bundles |
 | Public sample rebuild | `docs/examples/PageParcel-Sample.zip` rebuilds byte-for-byte and verifies |
 | Distribution check | The committed `assets/extension-dist` is identical to a fresh build |
 
-## Public-page capture matrix (Page Text, OCR off)
+## Public-page capture matrix (Page Text)
 
 Real Chrome toolbar captures of public pages, compared with the live DOM. Raw captures are not stored in the repository.
 
@@ -31,10 +31,9 @@ Real Chrome toolbar captures of public pages, compared with the live DOM. Raw ca
 
 ## Local browser fixtures
 
-`assets/extension/tests/browser/` contains harmless local pages for exercising the export options and OCR:
+`assets/extension/tests/browser/` contains harmless local pages for exercising the export options:
 
 - Export options: "Advanced" starts collapsed; **Keep duplicate page copies** appears only when copies were actually removed, and toggles reversibly.
-- OCR: a canvas containing `PAGEPARCEL LOCAL OCR / Invoice 42 Total 125.00` is recognized locally (about 95% confidence); a nearby form field is excluded; the worker is stopped afterward.
 
 ## Not covered by automation
 

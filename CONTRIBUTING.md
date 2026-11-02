@@ -39,7 +39,7 @@ Changes to permissions, CSP, networking, data retention, redaction, DOM sanitiza
 4. In Chrome, load `assets/extension-dist` unpacked and check:
    - **Trace Bundle** on an ordinary article. Run `python3 scripts/verify_bundle.py` on the ZIP and confirm the screenshot has no repeated headers or scrollbars.
    - **Trace Bundle** on an app page that scrolls an inner panel (webmail, a dashboard). Expect `page-viewport.png`, the full panel in `page.png`, and no repeated scrollbar thumbs.
-   - **Page Text**, with and without **OCR visible images — local**. Verify the `.md` with the verifier and check that the OCR section is labeled.
+   - **Page Text**. Verify the `.md` with the verifier.
    - On the Page Text export page, toggle **Include site navigation**, download again, and confirm the new file verifies.
    - A form with a password and a card-number field: both read `[REDACTED]` in `page.md`.
    - Full Page, Visible Area and Selected Region open the editor; PNG and PDF export work.

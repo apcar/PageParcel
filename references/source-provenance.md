@@ -9,8 +9,6 @@ Direct runtime components (exact versions resolved in `assets/extension/package-
 - Turndown 7.2.4, MIT.
 - fflate 0.8.3, MIT.
 - Preact 10.29.8, MIT, inherited from the base.
-- Tesseract.js 7.0.0 and tesseract.js-core 7.0.0, Apache-2.0, for opt-in local OCR. Pinned exactly; the audit rejects other versions.
-- @tesseract.js-data/eng 1.0.0 (4.0.0_best_int English data), MIT package metadata. Bundled under `ocr/` (about 15 MB) with SHA-256 hashes in `ocr/assets.json`.
 
 Notable transitive runtime component: @xmldom/xmldom 0.9.12 (MIT), via Defuddle.
 

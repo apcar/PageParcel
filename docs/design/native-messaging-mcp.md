@@ -22,11 +22,11 @@ agent ──shell────────▶ pageparcel CLI ─┼─▶ local s
 
 1. **Native messaging host** (`com.apcar.pageparcel`): a small program that Chrome starts on demand. Its manifest lists PageParcel's extension ID in `allowed_origins`, so no other extension can connect. It only relays requests from the CLI and writes files.
 2. **Extension side**: on startup the background worker calls `chrome.runtime.connectNative('com.apcar.pageparcel')` *only when the user has turned on "Allow local agent requests"* in options (off by default). It accepts a fixed, versioned message set:
-   - `capture { mode: "trace" | "text", ocr?: boolean, tab: "active" }`
+   - `capture { mode: "trace" | "text", tab: "active" }`
    - `status {}`
    The capture runs through the same code path as the toolbar. The result goes to the host as bytes plus the page.json or seal, never as a URL to fetch.
 3. **CLI** (`pageparcel`): talks to the host over a per-user Unix socket or named pipe and prints JSON: `{ ok, kind, path, sha256, source_url, captured_at }`. It also wraps `verify_bundle.py` and `find_latest_bundle.py`.
-4. **MCP server** (`pageparcel-mcp`, stdio): tools `capture_page(mode, ocr)`, `verify_capture(path)`, `latest_capture(kind, since)`, `read_capture(path, part)`. It is a thin wrapper over the CLI, with no network transport.
+4. **MCP server** (`pageparcel-mcp`, stdio): tools `capture_page(mode)`, `verify_capture(path)`, `latest_capture(kind, since)`, `read_capture(path, part)`. It is a thin wrapper over the CLI, with no network transport.
 
 ## Permission and security review
 

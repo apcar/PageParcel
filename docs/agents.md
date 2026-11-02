@@ -13,7 +13,7 @@ Open and check the intended page in Chrome first (the right account, fully loade
 | Output | Toolbar | Keyboard (default; change at `chrome://extensions/shortcuts`) |
 | --- | --- | --- |
 | Trace Bundle (ZIP) | PageParcel → **Trace Bundle** | ⌘⇧E (macOS) / Ctrl+Shift+E |
-| Page Text (.md) | PageParcel → **Page Text** (optional **OCR visible images — local**) | unassigned; set one at `chrome://extensions/shortcuts` |
+| Page Text (.md) | PageParcel → **Page Text** | unassigned; set one at `chrome://extensions/shortcuts` |
 | Full-page / visible / region image | PageParcel → mode | ⌘⇧S, ⌘⇧V, ⌘⇧R |
 
 A Trace Bundle scrolls the page once and returns it to where it was. Don't interact with the tab until the export tab says the download started. Work one capture at a time, at human speed, especially on managed or rate-limited sites.

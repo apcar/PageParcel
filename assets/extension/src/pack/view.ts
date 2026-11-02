@@ -11,7 +11,7 @@ export function pageTextView(): string {
       <label><input id="include-navigation" type="checkbox"> Include site navigation</label>
       <label id="duplicate-option" hidden><input id="include-presentation-copies" type="checkbox" disabled> Keep duplicate page copies</label>
     </details>
-    <p class="privacy">Loaded page text only. No scrolling. Optional OCR reads visible image regions locally; OCR may be inaccurate. Hidden content, form fields, editable areas, and embedded content are excluded. Nothing is uploaded.</p>
+    <p class="privacy">Loaded page text only. No scrolling. Hidden content, form fields, editable areas, and embedded content are excluded. Nothing is uploaded.</p>
   </main>`;
 }
 

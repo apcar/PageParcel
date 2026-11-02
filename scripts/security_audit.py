@@ -25,10 +25,10 @@ FORBIDDEN_MANIFEST_KEYS = (
     "update_url",
     "key",
 )
-# Explicit local-OCR CSP: only packaged WASM is newly permitted; no general eval/CDN.
+# Reviewed CSP: no eval of any kind (including WASM), no CDN.
 # default-src 'self' closes the directives that were previously unlisted (fonts, styles, manifests).
 EXPECTED_CSP = (
-    "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; object-src 'none'; "
+    "default-src 'self'; script-src 'self'; worker-src 'self'; object-src 'none'; "
     "connect-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; "
     "media-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none';"
 )
@@ -50,12 +50,12 @@ def audit_manifest(manifest: dict) -> list[str]:
     script_src = re.search(r"script-src([^;]*)", csp)
     if not script_src or "'self'" not in script_src.group(1):
         errors.append("CSP missing script-src 'self'")
-    elif re.search(r"'unsafe-eval'|'unsafe-inline'|https?:|\*", script_src.group(1)):
+    elif re.search(r"'unsafe-eval'|'wasm-unsafe-eval'|'unsafe-inline'|https?:|\*", script_src.group(1)):
         errors.append("CSP contains an unsafe script allowance")
     if re.search(r"https?://", csp):
         errors.append("CSP allows a remote origin")
     if csp != EXPECTED_CSP:
-        errors.append("CSP differs from reviewed local-OCR policy")
+        errors.append("CSP differs from reviewed policy")
     return errors
 
 
@@ -76,26 +76,12 @@ def main() -> int:
         if not str(entry.get("resolved", "")).startswith("https://registry.npmjs.org/") or not entry.get("integrity"):
             errors.append(f"lockfile entry not pinned to the npm registry with integrity: {name}")
 
-    import hashlib
-    ocr_root = root / "public/ocr"
-    asset_manifest = ocr_root / "assets.json"
-    if not asset_manifest.exists():
-        errors.append("Bundled OCR assets missing: run npm run ocr:bundle")
-    else:
-        hashes = json.loads(asset_manifest.read_text())
-        expected = {"worker.min.js", "LICENSE-tesseract.txt", "LICENSE-core.txt", "eng.traineddata.gz", "tesseract-core-lstm.wasm.js", "tesseract-core-simd-lstm.wasm.js", "tesseract-core-relaxedsimd-lstm.wasm.js"}
-        if set(hashes) != expected:
-            errors.append("Unexpected OCR asset set")
-        for name, digest in hashes.items():
-            if name not in expected:
-                continue
-            asset = ocr_root / name
-            if not asset.exists() or hashlib.sha256(asset.read_bytes()).hexdigest() != digest:
-                errors.append(f"OCR asset hash mismatch: {name}")
-        lock = lock_packages
-        for package, version in (("tesseract.js", "7.0.0"), ("@tesseract.js-data/eng", "1.0.0")):
-            if lock.get(f"node_modules/{package}", {}).get("version") != version:
-                errors.append(f"Unreviewed OCR dependency version: {package}")
+    ocr_assets = [p for p in (root / "public/ocr", root / "dist/ocr", root.parent / "extension-dist/ocr") if p.exists()]
+    if ocr_assets:
+        errors.append("OCR assets were removed in 0.3.0 and must not ship")
+    for package in ("tesseract.js", "tesseract.js-core", "@tesseract.js-data/eng"):
+        if f"node_modules/{package}" in lock_packages:
+            errors.append(f"Removed OCR dependency present: {package}")
 
     source_root = root / "src"
     for path in source_root.rglob("*"):

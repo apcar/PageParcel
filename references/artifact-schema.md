@@ -84,7 +84,7 @@ pageparcel_sha256: 3f0c…(64 hex)
 …
 ```
 
-`pageparcel_sha256` is the SHA-256 of the file's UTF-8 bytes with that one line (including its newline) removed. It covers the front matter, the body, and any appended OCR section. Check it by hand with:
+`pageparcel_sha256` is the SHA-256 of the file's UTF-8 bytes with that one line (including its newline) removed. It covers the front matter and the body. Check it by hand with:
 
 ```bash
 grep -v '^pageparcel_sha256: ' FILE.md | shasum -a 256   # compare with the value in the file

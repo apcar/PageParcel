@@ -1,7 +1,6 @@
 import './pack.css';
 import { setDuplicateOption } from './view';
 import { buildPageText, sealPageText } from './build';
-import { ocrMarkdown } from '../ocr/markdown';
 import type { PageSnapshot } from '../shared/types';
 
 async function main(): Promise<void> {
@@ -14,24 +13,14 @@ async function main(): Promise<void> {
     return;
   }
   try {
-    const stored = {
-      ...(await chrome.storage.local.get(key)),
-      ...(await chrome.storage.session.get(key)),
-    };
+    const stored = await chrome.storage.local.get(key);
     const snapshot = stored[key] as PageSnapshot | undefined;
     if (!snapshot) throw new Error('No pending page text. Start a new capture from PageParcel.');
-    await Promise.all([chrome.storage.local.remove(key), chrome.storage.session.remove(key)]);
-    if (snapshot.ocr) {
-      const { recognizeImages } = await import('../ocr/recognize');
-      await recognizeImages(snapshot.ocr, (message) => {
-        status.textContent = message;
-      });
-    }
-    const ocrText = snapshot.ocr ? ocrMarkdown(snapshot.ocr) : '';
+    await chrome.storage.local.remove(key);
     const includeNavigation = document.querySelector<HTMLInputElement>('#include-navigation')!;
     const includeCopies = document.querySelector<HTMLInputElement>('#include-presentation-copies')!;
     const version = chrome.runtime.getManifest().version;
-    // Seal after OCR text is appended so the integrity line covers the whole file.
+    // The integrity line covers the whole file.
     const sealedUrl = async (markdown: string) =>
       URL.createObjectURL(
         new Blob([await sealPageText(markdown, version)], {
@@ -40,12 +29,12 @@ async function main(): Promise<void> {
       );
     let result = buildPageText(snapshot);
     setDuplicateOption(result.presentationCopiesRemoved);
-    let url = await sealedUrl(result.markdown + ocrText);
+    let url = await sealedUrl(result.markdown);
     const regenerate = async () => {
       button.disabled = true;
       result = buildPageText(snapshot, includeNavigation.checked, includeCopies.checked);
       URL.revokeObjectURL(url);
-      url = await sealedUrl(result.markdown + ocrText);
+      url = await sealedUrl(result.markdown);
       button.disabled = false;
       status.textContent = 'Options changed. Download Markdown to save this version.';
     };
@@ -65,12 +54,12 @@ async function main(): Promise<void> {
     };
     button.addEventListener('click', () => void download());
     details.textContent = `${snapshot.title}\n${snapshot.url}`;
-    await Promise.all([chrome.storage.local.remove(key), chrome.storage.session.remove(key)]);
+    await chrome.storage.local.remove(key);
     await download();
   } catch (error) {
     status.textContent = error instanceof Error ? error.message : 'Could not prepare Page Text.';
     status.dataset.error = 'true';
-    await Promise.all([chrome.storage.local.remove(key), chrome.storage.session.remove(key)]);
+    await chrome.storage.local.remove(key);
   }
 }
 void main();

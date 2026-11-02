@@ -45,7 +45,7 @@ Shortcuts can be changed at `chrome://extensions/shortcuts`. Page Text has no de
 
 ### Page Text
 
-Page Text saves the loaded page as one Markdown file. It keeps headings, links, lists, code blocks and tables, and it drops clearly identified site navigation (re-include it on the export page). Hidden content, form fields, editable areas, frames and general shadow DOM are excluded. The tick box **OCR visible images — local** also reads English text in visible images and canvases, entirely on your machine using a bundled engine. The OCR output is added as a separate, clearly labeled section. Each file is sealed so later edits are detectable. An abridged example:
+Page Text saves the loaded page as one Markdown file. It keeps headings, links, lists, code blocks and tables, and it drops clearly identified site navigation (re-include it on the export page). Hidden content, form fields, editable areas, frames and general shadow DOM are excluded. Each file is sealed so later edits are detectable. An abridged example:
 
 ```markdown
 ---
@@ -132,7 +132,7 @@ See [docs/testing.md](docs/testing.md) for what is tested and [CONTRIBUTING.md](
 
 ## Security model
 
-PageParcel runs only when you invoke it, on the active tab, with no host permissions. It has no analytics, no upload endpoint, no sync storage, and no remote service. The content security policy limits every resource and connection to the extension itself, and OCR assets are bundled and hash-checked.
+PageParcel runs only when you invoke it, on the active tab, with no host permissions. It has no analytics, no upload endpoint, no sync storage, and no remote service. The content security policy limits every resource and connection to the extension itself.
 
 What the text outputs leave out:
 
@@ -146,13 +146,13 @@ What the text outputs leave out:
 - personal details
 - notifications and anything else on screen
 
-Password fields show only their masking dots, but nothing else is hidden. Local OCR reads whatever text is in the images it processes. Review the page, or use Page Text, when a capture must not show sensitive content. See the [security contract](references/security-contract.md), [security policy](SECURITY.md) and [privacy notice](PRIVACY.md).
+Password fields show only their masking dots, but nothing else is hidden. Review the page, or use Page Text, when a capture must not show sensitive content. See the [security contract](references/security-contract.md), [security policy](SECURITY.md) and [privacy notice](PRIVACY.md).
 
 ## Limits
 
 - Dynamic pages can change while a full-page capture scrolls.
 - Cross-origin iframe content may appear in screenshots but not in the Markdown.
-- Canvas-rendered text is visual only unless you use local OCR in Page Text.
+- Text inside images and canvases is not extracted. It stays visible in the screenshots, where an AI or OCR tool can read it.
 - Virtualized or not-yet-loaded content is not fetched.
 - Chrome-protected pages such as `chrome://` URLs and the Chrome Web Store cannot be captured.
 

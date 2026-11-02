@@ -4,10 +4,13 @@ All notable changes to PageParcel are documented here.
 
 ## 0.3.0 - 2026-10-21
 
+### Removed
+
+- **Local OCR.** The opt-in Page Text OCR option, its Tesseract.js engine, and its English data are gone before release. This drops about 14.8 MB from the extension and removes `'wasm-unsafe-eval'` from the content security policy. Text inside images stays in the screenshots, where any AI or OCR tool can read it.
+
 ### Added
 
 - **Page Text**: a standalone Markdown capture of the visible page text, with conservative navigation cleanup, heading and boundary preservation, export-copy filtering, and an Advanced option for duplicate recovery.
-- **Opt-in local OCR** for text inside images and canvases, using bundled Tesseract.js assets only (no CDN, bounded in count, pixels and time).
 - **Verifiable Page Text.** Each file carries `pageparcel_schema: page-text/1.0`, a `generator` line, and a `pageparcel_sha256` seal over its own contents.
 - **Trace Bundle schema 1.1.**
   - Bundles add `page-text.md`, an `extraction` block recording whether Page Text is included, the reader-to-structured text ratio, and a sparse-reader flag.

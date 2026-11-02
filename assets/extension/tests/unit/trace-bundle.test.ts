@@ -142,7 +142,7 @@ describe('sealed Page Text', () => {
       ...draft().snapshot,
       html: '<html><body><h1>Title</h1><p>Body text.</p></body></html>',
     });
-    const sealed = await sealPageText(`${markdown}\n## OCR\n\nRecognized text\n`, '9.9.9');
+    const sealed = await sealPageText(`${markdown}\n## Appendix\n\nAppended text\n`, '9.9.9');
     expect(sealed).toMatch(/\npageparcel_schema: page-text\/1\.0\n/);
     expect(sealed).toContain('generator: "PageParcel 9.9.9"');
     expect(sealed).toMatch(/\npageparcel_sha256: [0-9a-f]{64}\n---\n/);
