@@ -37,13 +37,15 @@ The popup has one main button and four smaller options.
 
 | In the popup | Mode | Output | Use it for |
 | --- | --- | --- | --- |
-| **Save Page** (⌘⇧E / Ctrl+Shift+E) | Trace Bundle | `PageParcel-<UTC time>-<title>.zip` | The full record: screenshots, Markdown, metadata, and hashes |
-| **Text only** | Page Text | `PageParcel-<UTC time>-<title>.md` | Fast, faithful text of the loaded page, with no scrolling and no screenshots |
-| **Full page image** | Full Page | Image or PDF via the editor | A stitched screenshot to annotate or share |
-| **Visible area image** | Visible Area | Image or PDF via the editor | Exactly what's on screen |
-| **Select image area** | Selected Region | Image or PDF via the editor | Part of the screen |
+| **Save Page** (⌘⇧E / Ctrl+Shift+E) | Trace Bundle | `<date>_<title>_bundle.zip` | The full record: screenshots, Markdown, metadata, and hashes |
+| **Text only** | Page Text | `<date>_<title>_text.md` | Fast, faithful text of the loaded page, with no scrolling and no screenshots |
+| **Full page image** | Full Page | `<date>_<title>_full-page.png` (or PDF) via the editor | A stitched screenshot to annotate or share |
+| **Visible area image** | Visible Area | `<date>_<title>_visible.png` (or PDF) via the editor | Exactly what's on screen |
+| **Select image area** | Selected Region | `<date>_<title>_region.png` (or PDF) via the editor | Part of the screen |
 
 The other three image modes keep their keyboard shortcuts (⌘⇧S, ⌘⇧V, and ⌘⇧R on a Mac), but only the Save Page shortcut is shown in the popup. Change any of them at `chrome://extensions/shortcuts`. Text only has no default shortcut.
+
+For example, Save Page on the Sallie Mae Wikipedia article on November 1, 2026 saves `2026-11-01_Sallie Mae - Wikipedia_bundle.zip`. Below the buttons, the popup shows one line: "Everything stays on your computer. Password fields are redacted from text." Screenshots are not redacted (see Security).
 
 ## Settings
 
@@ -54,7 +56,7 @@ Open Settings with the gear icon in the popup.
 | Appearance | Theme | Light | Light, Dark, or System |
 | Saving | Default format | PNG | PNG, JPEG, WebP, or PDF, for images saved from the editor |
 | Saving | Quality | 92% | Shown only for JPEG and WebP |
-| Saving | File name | `{date}_{title}` | Tokens: `{date}`, `{time}`, `{title}`, `{w}`, and `{h}`. The title drops characters that macOS and Windows don't allow, collapses spaces, stops at 80 characters, and falls back to `page`. Trace Bundles and Page Text files keep their own fixed names. |
+| Saving | File name | `{date}_{title}_{type}` | Used for every file PageParcel saves. Tokens: `{date}` and `{time}` (local capture time), `{title}`, `{type}` (`bundle`, `text`, `full-page`, `visible`, or `region`), `{w}`, and `{h}`. If a custom template leaves out `{type}`, `_{type}` is added so outputs stay easy to find. The title drops characters that macOS and Windows don't allow, collapses spaces, stops at 80 characters, and falls back to `page`. |
 | PDF | Page size | A4 | A4, Letter, or Full (one page sized to the image). Shown when the default format is PDF, and collapsed otherwise. |
 | PDF | Orientation | Portrait | Not used with Full |
 | PDF | Multi-page | On | Not used with Full |
@@ -84,14 +86,14 @@ pageparcel_sha256: b95ff0a5…
 A harmless static page used to demonstrate the PageParcel Trace Bundle format.
 ```
 
-The full file is [docs/examples/PageParcel-Sample-Page-Text.md](docs/examples/PageParcel-Sample-Page-Text.md).
+The full file is [docs/examples/sample_text.md](docs/examples/sample_text.md).
 
 ## Output formats
 
 A Trace Bundle (schema 1.1) contains:
 
 ```text
-PageParcel-20261018T194500Z-example-page.zip
+2026-10-18_Example Page_bundle.zip
 ├── page.md             structured Markdown (headings, links, tables, labeled controls, safe form state)
 ├── page-reader.md      reader-view Markdown; flagged when it drops most of the page
 ├── page-text.md        the same text as Page Text mode
@@ -100,13 +102,13 @@ PageParcel-20261018T194500Z-example-page.zip
 └── page.json           provenance plus the byte count and SHA-256 of every other file
 ```
 
-No HTML, JavaScript, or SVG markup is ever written. Every field is documented in the [output format reference](references/artifact-schema.md). Try the [example Trace Bundle](docs/examples/PageParcel-Sample.zip).
+No HTML, JavaScript, or SVG markup is ever written. Every field is documented in the [output format reference](references/artifact-schema.md). Try the [example Trace Bundle](docs/examples/sample_bundle.zip).
 
 ## Verify a capture
 
 ```bash
-python3 scripts/verify_bundle.py ~/Downloads/PageParcel-*.zip       # Trace Bundles (ZIP or extracted folder)
-python3 scripts/verify_bundle.py ~/Downloads/PageParcel-*.md        # sealed Page Text files
+python3 scripts/verify_bundle.py ~/Downloads/*_bundle.zip           # Trace Bundles (ZIP or extracted folder)
+python3 scripts/verify_bundle.py ~/Downloads/*_text.md              # sealed Page Text files
 python3 scripts/verify_bundle.py --json FILE                        # machine-readable result
 ```
 

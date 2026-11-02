@@ -2,6 +2,7 @@ import './pack.css';
 import { setDuplicateOption } from './view';
 import { buildPageText, sealPageText } from './build';
 import type { PageSnapshot } from '../shared/types';
+import { getSettings } from '../shared/storage';
 
 async function main(): Promise<void> {
   const status = document.querySelector<HTMLElement>('#status')!;
@@ -27,12 +28,18 @@ async function main(): Promise<void> {
           type: 'text/markdown;charset=utf-8',
         }),
       );
-    let result = buildPageText(snapshot);
+    const { filenameTemplate } = await getSettings();
+    let result = buildPageText(snapshot, false, false, filenameTemplate);
     setDuplicateOption(result.presentationCopiesRemoved);
     let url = await sealedUrl(result.markdown);
     const regenerate = async () => {
       button.disabled = true;
-      result = buildPageText(snapshot, includeNavigation.checked, includeCopies.checked);
+      result = buildPageText(
+        snapshot,
+        includeNavigation.checked,
+        includeCopies.checked,
+        filenameTemplate,
+      );
       URL.revokeObjectURL(url);
       url = await sealedUrl(result.markdown);
       button.disabled = false;

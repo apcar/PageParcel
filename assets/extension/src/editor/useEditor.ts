@@ -648,6 +648,8 @@ export function useEditor() {
       width: imageSize?.w ?? 0,
       height: imageSize?.h ?? 0,
       title: capture?.title,
+      type: capture?.mode === 'visible' || capture?.mode === 'region' ? capture.mode : 'full-page',
+      date: capture?.capturedAt ? new Date(capture.capturedAt) : undefined,
     });
   }, [settings, imageSize, capture]);
 

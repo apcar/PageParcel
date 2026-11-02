@@ -12,7 +12,8 @@ All notable changes to PageParcel are documented here.
 
 - **A simpler popup.** A light theme by default, with one blue **Save Page** button (Trace Bundle) and a "Just one part" list: Text only, Full page image, Visible area image, and Select image area. Line icons replace emoji. Only the Save Page shortcut is shown, and the shortcut link moved into Settings.
 - **A grouped Settings screen.** Appearance, Saving, PDF, and Keyboard shortcuts. Quality appears only for JPEG and WebP, and PDF options are collapsed unless PDF is the default format.
-- **Readable default file names.** Editor exports now default to `{date}_{title}`. Titles lose characters that macOS and Windows don't allow, collapse whitespace, stop at 80 characters, and fall back to `page`.
+- **Readable file names for everything, with no `PageParcel-` prefix.** Every output uses the File name setting, which now defaults to `{date}_{title}_{type}`, for example `2026-11-01_Sallie Mae - Wikipedia_bundle.zip`. Types are `bundle`, `text`, `full-page`, `visible`, and `region`, and a new `{type}` token is added to custom templates that leave it out. Titles lose characters that macOS and Windows don't allow, collapse whitespace, stop at 80 characters, and fall back to `page`. `find_latest_bundle.py` finds both the new names and older `PageParcel-*` names.
+- **A one-line privacy note** under the popup buttons: "Everything stays on your computer. Password fields are redacted from text."
 - **Page Text**: a standalone Markdown capture of the visible page text, with conservative navigation cleanup, heading and boundary preservation, export-copy filtering, and an Advanced option for duplicate recovery.
 - **Verifiable Page Text.** Each file carries `pageparcel_schema: page-text/1.0`, a `generator` line, and a `pageparcel_sha256` seal over its own contents.
 - **Trace Bundle schema 1.1.**
@@ -27,6 +28,10 @@ All notable changes to PageParcel are documented here.
 - `docs/testing.md` and `scripts/ci_local.sh`, which runs every CI gate locally.
 
 ### Changed
+
+- **No welcome screen.** The first-run onboarding card and its `showOnboarding` setting are gone; the popup opens straight to its buttons.
+- **Fixed dull image file names.** Earlier builds saved their default template (`screenshot_{date}_{time}`) into storage on the first settings change, so later defaults never applied and image exports had no page title. Old default templates are now treated as unset, and editor exports use the capture's title and time.
+- The public sample files are now `docs/examples/sample_bundle.zip` and `docs/examples/sample_text.md`.
 
 - **Structured Markdown on app-style pages.**
   - Relative links resolve against the page URL; empty `#` links and non-web schemes are dropped.

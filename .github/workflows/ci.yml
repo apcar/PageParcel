@@ -54,7 +54,7 @@ jobs:
       - name: Verify public example bundle
         run: |
           python3 scripts/build_public_sample.py
-          python3 scripts/verify_bundle.py docs/examples/PageParcel-Sample.zip docs/examples/PageParcel-Sample-Page-Text.md
+          python3 scripts/verify_bundle.py docs/examples/sample_bundle.zip docs/examples/sample_text.md
           git diff --exit-code -- docs/examples/
           test -z "$(git status --porcelain -- docs/examples/)"
 

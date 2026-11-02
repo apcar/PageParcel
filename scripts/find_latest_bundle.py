@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Find the newest PageParcel output: Trace Bundle ZIPs, Page Text .md files, or extracted bundle folders.
 
-Searches ~/Downloads and ~/Desktop by default (Chrome's usual download targets).
+Recognizes 0.3.0+ names ending in _bundle.zip, _text.md, or an extracted _bundle/ folder, and older
+PageParcel-* names. Searches ~/Downloads and ~/Desktop by default (Chrome's usual download targets).
 
 Examples:
   find_latest_bundle.py                      # newest output of any kind
@@ -24,6 +25,14 @@ KINDS = {
 }
 
 
+def is_pageparcel_name(path: pathlib.Path) -> bool:
+    """0.3.0+ names end in _bundle or _text; older names start with PageParcel-."""
+    if path.name.startswith("PageParcel-"):
+        return True
+    stem = path.stem if path.is_file() else path.name
+    return stem.endswith(("_bundle", "_text"))
+
+
 def kind_of(path: pathlib.Path) -> str | None:
     for name, test in KINDS.items():
         if test(path):
@@ -36,7 +45,9 @@ def candidates(directories: list[pathlib.Path], kind: str) -> list[dict]:
     for directory in directories:
         if not directory.is_dir():
             continue
-        for path in directory.glob("PageParcel-*"):
+        for path in directory.iterdir():
+            if not is_pageparcel_name(path):
+                continue
             detected = kind_of(path)
             if detected is None or (kind != "any" and detected != kind):
                 continue

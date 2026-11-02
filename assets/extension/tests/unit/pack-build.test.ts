@@ -48,7 +48,9 @@ describe('Page Text', () => {
       ...draft.snapshot,
       html: `<html><body><h2>Heading</h2><ul><li>Item</li></ul><a href="../guide">Guide</a><pre><code>const x = 1;</code></pre><img alt="Diagram"></body></html>`,
     });
-    expect(result.filename).toBe('PageParcel-20260720T120000Z-Account Overview.md');
+    const d = new Date('2026-07-20T12:00:00.000Z');
+    const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    expect(result.filename).toBe(`${day}_Account Overview_text.md`);
     expect(result.markdown).toContain('source: "https://example.test/account"');
     expect(result.markdown).toContain('captured_at: "2026-07-20T12:00:00.000Z"');
     expect(result.markdown).toContain('## Heading');

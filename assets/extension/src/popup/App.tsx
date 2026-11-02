@@ -45,7 +45,6 @@ function fallbackShortcut(): string {
 
 export function App() {
   const [settings, setSettingsState] = useState<Settings>(DEFAULT_SETTINGS);
-  const [showWelcome, setShowWelcome] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [busy, setBusy] = useState<CaptureMode | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
@@ -57,7 +56,6 @@ export function App() {
   useEffect(() => {
     void getSettings().then((s) => {
       setSettingsState(s);
-      setShowWelcome(s.showOnboarding);
       applyTheme(s.theme);
     });
     // Actual (possibly user-remapped) bindings, formatted per platform by Chrome.
@@ -120,12 +118,6 @@ export function App() {
     });
   }
 
-  async function dismissWelcome() {
-    setShowWelcome(false);
-    const next = await setSettings({ showOnboarding: false });
-    setSettingsState(next);
-  }
-
   return (
     <div class="app">
       <header class="header">
@@ -161,8 +153,6 @@ export function App() {
 
       {showSettings ? (
         <SettingsView settings={settings} onChange={updateSettings} shortcut={saveShortcut} />
-      ) : showWelcome ? (
-        <Welcome onDone={dismissWelcome} />
       ) : (
         <>
           <button
@@ -222,6 +212,7 @@ export function App() {
               );
             })}
           </nav>
+          <p class="privacy-note">{t('privacyNote')}</p>
         </>
       )}
 
@@ -416,24 +407,6 @@ function SettingsView({
           </button>
         </div>
       </div>
-    </div>
-  );
-}
-
-function Welcome({ onDone }: { onDone: () => void }) {
-  return (
-    <div class="welcome">
-      <h2 class="welcome-title">{t('welcomeTitle')}</h2>
-      <p class="welcome-lede">{t('welcomeLede')}</p>
-      <ul class="welcome-list">
-        <li>{t('welcomeList1')}</li>
-        <li>{t('welcomeList2')}</li>
-        <li>{t('welcomeList3')}</li>
-      </ul>
-      <p class="welcome-perm">{t('welcomePerm')}</p>
-      <button class="btn-primary" onClick={onDone}>
-        {t('welcomeCta')}
-      </button>
     </div>
   );
 }

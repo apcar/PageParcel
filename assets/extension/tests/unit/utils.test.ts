@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   formatFilename,
+  LEGACY_DEFAULT_TEMPLATES,
   sanitizeFilename,
   sanitizeTitle,
   isProtectedUrl,
@@ -31,17 +32,74 @@ describe('formatFilename', () => {
 });
 
 describe('default file name', () => {
-  it('is {date}_{title}', () => {
-    expect(DEFAULT_SETTINGS.filenameTemplate).toBe('{date}_{title}');
+  const at = new Date(2026, 10, 1, 9, 5, 7);
+  it('is {date}_{title}_{type}', () => {
+    expect(DEFAULT_SETTINGS.filenameTemplate).toBe('{date}_{title}_{type}');
     const out = formatFilename(DEFAULT_SETTINGS.filenameTemplate, {
       title: 'Release notes: v0.3.0 | PageParcel',
-      width: 1,
-      height: 1,
+      type: 'full-page',
+      date: at,
     });
-    expect(out).toMatch(/^\d{4}-\d{2}-\d{2}_Release notes v0\.3\.0 PageParcel$/);
+    expect(out).toBe('2026-11-01_Release notes v0.3.0 PageParcel_full-page');
+  });
+  it('names a bundle like the example', () => {
+    const out = formatFilename(DEFAULT_SETTINGS.filenameTemplate, {
+      title: 'Sallie Mae - Wikipedia',
+      type: 'bundle',
+      date: at,
+    });
+    expect(`${out}.zip`).toBe('2026-11-01_Sallie Mae - Wikipedia_bundle.zip');
+  });
+  it('covers every output type and has no PageParcel prefix', () => {
+    for (const type of ['bundle', 'text', 'full-page', 'visible', 'region'] as const) {
+      const out = formatFilename(DEFAULT_SETTINGS.filenameTemplate, { title: 'T', type, date: at });
+      expect(out).toBe(`2026-11-01_T_${type}`);
+      expect(out.startsWith('PageParcel-')).toBe(false);
+    }
+  });
+  it('appends _{type} to custom templates that lack it', () => {
+    expect(formatFilename('{title}', { title: 'Doc', type: 'visible', date: at })).toBe(
+      'Doc_visible',
+    );
+    expect(formatFilename('{type}-{title}', { title: 'Doc', type: 'region', date: at })).toBe(
+      'region-Doc',
+    );
+  });
+  it('uses the capture time for {date} and {time}', () => {
+    expect(formatFilename('{date}_{time}', { date: at })).toBe('2026-11-01_090507');
+  });
+  it('falls back to the default template and to "page"', () => {
+    expect(formatFilename('  ', { type: 'text', date: at })).toBe('2026-11-01_page_text');
+  });
+  it('keeps user template text file-safe', () => {
+    expect(formatFilename('a/b_{title}', { title: 'X', type: 'text', date: at })).toBe(
+      'a_b_X_text',
+    );
   });
   it('defaults to the light theme', () => {
     expect(DEFAULT_SETTINGS.theme).toBe('light');
+  });
+});
+
+describe('settings migration', () => {
+  async function loadWith(stored: Record<string, unknown>) {
+    vi.stubGlobal('chrome', {
+      storage: { local: { get: async () => ({ 'pageparcel:settings': stored }) } },
+    });
+    const { getSettings } = await import('../../src/shared/storage');
+    return getSettings();
+  }
+  it('replaces frozen legacy default templates with the new default', async () => {
+    for (const old of LEGACY_DEFAULT_TEMPLATES) {
+      expect((await loadWith({ filenameTemplate: old })).filenameTemplate).toBe(
+        '{date}_{title}_{type}',
+      );
+    }
+  });
+  it('keeps a customized template and drops showOnboarding', async () => {
+    const s = await loadWith({ filenameTemplate: 'mine_{title}', showOnboarding: false });
+    expect(s.filenameTemplate).toBe('mine_{title}');
+    expect('showOnboarding' in s).toBe(false);
   });
 });
 

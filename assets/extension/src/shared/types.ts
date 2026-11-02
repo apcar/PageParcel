@@ -142,7 +142,6 @@ export interface Settings {
   pdfMarginMm: number;
   quality: number; // 0..1, JPEG/WebP/PDF quality
   filenameTemplate: string;
-  showOnboarding: boolean;
   // Annotation style (remembered across sessions)
   annotationColor: string;
   annotationStrokeWidth: number;
@@ -157,8 +156,7 @@ export const DEFAULT_SETTINGS: Settings = {
   pdfMultiPage: true,
   pdfMarginMm: 8,
   quality: 0.92,
-  filenameTemplate: '{date}_{title}',
-  showOnboarding: true,
+  filenameTemplate: '{date}_{title}_{type}',
   annotationColor: '#ff3b30',
   annotationStrokeWidth: 6,
   annotationFontSize: 28,

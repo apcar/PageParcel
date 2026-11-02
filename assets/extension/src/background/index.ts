@@ -44,7 +44,7 @@ const PAINT_SETTLE_MS = 60;
 
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
-    console.log('[PageParcel] installed — welcome card will show on first popup open.');
+    console.log('[PageParcel] installed — ready.');
   }
 });
 
@@ -113,6 +113,20 @@ async function execInTab<A extends unknown[], R>(
   return result as Awaited<R>;
 }
 
+/**
+ * The page title for file names. Uses the tab's title and falls back to the
+ * document's own title, so image exports are never left untitled.
+ */
+async function pageTitle(tab: chrome.tabs.Tab): Promise<string> {
+  const fromTab = tab.title?.trim();
+  if (fromTab) return fromTab;
+  try {
+    return (await execInTab(tab.id as number, () => document.title || '', [])).trim();
+  } catch {
+    return '';
+  }
+}
+
 /** Inject a fire-and-forget (void) function; its undefined result is ignored. */
 async function runInTab<A extends unknown[]>(
   tabId: number,
@@ -133,7 +147,7 @@ async function captureVisible(tab: chrome.tabs.Tab): Promise<void> {
   const dataUrl = await captureVisibleTabPng(windowId);
   const width = Math.round(metrics.viewportWidth * metrics.devicePixelRatio);
   const height = Math.round(metrics.viewportHeight * metrics.devicePixelRatio);
-  await handoffToEditor(dataUrl, width, height, 'visible', tab.title ?? '');
+  await handoffToEditor(dataUrl, width, height, 'visible', await pageTitle(tab));
   broadcast({ type: 'CAPTURE_COMPLETE', imageUrl: dataUrl, width, height });
 }
 
@@ -150,7 +164,7 @@ async function captureRegion(tab: chrome.tabs.Tab): Promise<void> {
   const w = Math.round(rect.width * dpr);
   const h = Math.round(rect.height * dpr);
   const dataUrl = await execInTab(tabId, cropTile, [tile, x, y, w, h]);
-  await handoffToEditor(dataUrl, w, h, 'region', tab.title ?? '');
+  await handoffToEditor(dataUrl, w, h, 'region', await pageTitle(tab));
   broadcast({ type: 'CAPTURE_COMPLETE', imageUrl: dataUrl, width: w, height: h });
 }
 
@@ -224,7 +238,7 @@ async function captureFullPage(tab: chrome.tabs.Tab): Promise<void> {
   }
 
   const dataUrl = await execInTab(tabId, stitchTiles, [tiles, canvasWidth, canvasHeight, crop]);
-  await handoffToEditor(dataUrl, canvasWidth, canvasHeight, 'full-page', tab.title ?? '');
+  await handoffToEditor(dataUrl, canvasWidth, canvasHeight, 'full-page', await pageTitle(tab));
   broadcast({
     type: 'CAPTURE_COMPLETE',
     imageUrl: dataUrl,

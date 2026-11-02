@@ -47,42 +47,6 @@
     "message": "Can’t screenshot this protected page.",
     "description": "Error shown when the active page cannot be captured (e.g. chrome:// pages)."
   },
-  "comingSoon": {
-    "message": "Coming in a later milestone.",
-    "description": "Placeholder message for features not yet implemented."
-  },
-  "welcomeTitle": {
-    "message": "Welcome to PageParcel",
-    "description": "Onboarding welcome card title."
-  },
-  "welcomeLede": {
-    "message": "Pack a page into a portable local record, or create screenshots for annotation and PDF export.",
-    "description": "Welcome card description text."
-  },
-  "welcomeList1": {
-    "message": "Save Page: screenshot, text, and proof hashes in one bundle",
-    "description": "Welcome card feature list item 1"
-  },
-  "welcomeList2": {
-    "message": "Text only, full page image, or visible area image",
-    "description": "Welcome card feature list item 2"
-  },
-  "welcomeList3": {
-    "message": "Select image area: capture only what you need",
-    "description": "Welcome card feature list item 3"
-  },
-  "welcomePerm": {
-    "message": "Capture processing is local. Password and secret-like form fields are redacted from Markdown.",
-    "description": "Welcome card permission notice."
-  },
-  "welcomeCta": {
-    "message": "Get started",
-    "description": "Primary call-to-action on the welcome card."
-  },
-  "customizeShortcuts": {
-    "message": "Customize keyboard shortcuts",
-    "description": "Link that opens Chrome's extension shortcut settings."
-  },
   "settingsShortcuts": {
     "message": "Keyboard shortcuts",
     "description": "Shortcuts row label in settings."
@@ -136,7 +100,7 @@
     "description": "Filename template setting label."
   },
   "filenameHint": {
-    "message": "Tokens: {date} {time} {title} {w} {h}",
+    "message": "Used for every file. Tokens: {date}, {time}, {title}, {type}, {w}, and {h}. If {type} is missing, _{type} is added.",
     "description": "Help text for filename template tokens."
   },
   "settingsPdfDefaults": {
@@ -221,5 +185,9 @@
   },
   "pdfOptionsHint": {
     "message": "Used when the default format is PDF."
+  },
+  "privacyNote": {
+    "message": "Everything stays on your computer. Password fields are redacted from text.",
+    "description": "Small grey line under the popup buttons."
   }
 }

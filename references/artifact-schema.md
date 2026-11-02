@@ -2,7 +2,9 @@
 
 PageParcel writes two kinds of output. `scripts/verify_bundle.py` checks both.
 
-## Trace Bundle (`PageParcel-<UTC timestamp>-<title>.zip`), schema 1.1
+## Trace Bundle (`<date>_<title>_bundle.zip`), schema 1.1
+
+File names follow the File name setting (default `{date}_{title}_{type}`, local capture date). Builds before 0.3.0 used `PageParcel-<UTC timestamp>-<title>`; the scripts still accept those names.
 
 | File | Always | Contents |
 | --- | --- | --- |
@@ -59,7 +61,7 @@ Schema 1.0 (PageParcel 0.1–0.2) is the same without `page-text.md`, `page-view
 - `security.local_only` is `true`.
 - Folders: macOS metadata (`.DS_Store`, `._*`) is ignored; any other extra file, including other dotfiles, is rejected.
 
-## Page Text (`PageParcel-<UTC timestamp>-<title>.md`), schema page-text/1.0
+## Page Text (`<date>_<title>_text.md`), schema page-text/1.0
 
 A single Markdown file with YAML-style front matter:
 

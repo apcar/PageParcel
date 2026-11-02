@@ -5,7 +5,9 @@ import { removePresentationCopies } from './presentation';
 import { strToU8, zipSync } from 'fflate';
 import TurndownService from 'turndown';
 import type { CapturePackDraft, PageSnapshot } from '../shared/types';
-import { safeFileStem, sha256 } from '../shared/pack';
+import { DEFAULT_SETTINGS } from '../shared/types';
+import { sha256 } from '../shared/pack';
+import { formatFilename } from '../shared/utils';
 
 export interface BuiltCapturePack {
   bytes: Uint8Array;
@@ -397,15 +399,6 @@ function dataUrlToBytes(dataUrl: string): Uint8Array {
   return bytes;
 }
 
-function timestampStem(iso: string): string {
-  const date = new Date(iso);
-  const safe = Number.isNaN(date.getTime()) ? new Date() : date;
-  return safe
-    .toISOString()
-    .replace(/[-:]/g, '')
-    .replace(/\.\d{3}Z$/, 'Z');
-}
-
 /** Letters and digits only: a markup-independent measure of how much text a variant kept. */
 function textWeight(markdown: string): number {
   const body = markdown.replace(/^---\n[\s\S]*?\n---\n/, '');
@@ -416,7 +409,10 @@ function textWeight(markdown: string): number {
 export const READER_SPARSE_RATIO = 0.25;
 const READER_SPARSE_MIN_TEXT = 400;
 
-export async function buildCapturePack(draft: CapturePackDraft): Promise<BuiltCapturePack> {
+export async function buildCapturePack(
+  draft: CapturePackDraft,
+  filenameTemplate: string = DEFAULT_SETTINGS.filenameTemplate,
+): Promise<BuiltCapturePack> {
   const files: Record<string, Uint8Array> = {};
   const structured = buildStructuredMarkdown(draft);
   let reader = buildReaderMarkdown(draft);
@@ -500,7 +496,13 @@ export async function buildCapturePack(draft: CapturePackDraft): Promise<BuiltCa
   files['page.json'] = strToU8(`${JSON.stringify(manifest, null, 2)}\n`);
   return {
     bytes: zipSync(files, { level: 6 }),
-    filename: `PageParcel-${timestampStem(draft.snapshot.capturedAt)}-${safeFileStem(draft.snapshot.title)}.zip`,
+    filename: `${formatFilename(filenameTemplate, {
+      title: draft.snapshot.title,
+      width: draft.pageWidth,
+      height: draft.pageHeight,
+      type: 'bundle',
+      date: new Date(draft.snapshot.capturedAt),
+    })}.zip`,
     manifest,
   };
 }
@@ -510,6 +512,7 @@ export function buildPageText(
   snapshot: PageSnapshot,
   includeNavigation = false,
   includePresentationCopies = false,
+  filenameTemplate: string = DEFAULT_SETTINGS.filenameTemplate,
 ): { markdown: string; filename: string; presentationCopiesRemoved: number } {
   const doc = documentFromHtml(snapshot.html);
   doc
@@ -534,7 +537,11 @@ export function buildPageText(
     : '';
   return {
     markdown: `${metadata}${limits}${warning}${componentNotice}${presentationRemoved ? '> Matching off-canvas presentation copies omitted. Use Advanced → Keep duplicate page copies on the export page to retain them.\n' : ''}${navigationRemoved ? '> Site navigation omitted. Use Include site navigation on the export page to retain it.\n' : ''}\n${body}\n`,
-    filename: `PageParcel-${timestampStem(snapshot.capturedAt)}-${safeFileStem(snapshot.title)}.md`,
+    filename: `${formatFilename(filenameTemplate, {
+      title: snapshot.title,
+      type: 'text',
+      date: new Date(snapshot.capturedAt),
+    })}.md`,
     presentationCopiesRemoved: presentationRemoved,
   };
 }

@@ -6,8 +6,8 @@ import zipfile
 
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-OUTPUT = ROOT / "docs" / "examples" / "PageParcel-Sample.zip"
-PAGE_TEXT_OUTPUT = ROOT / "docs" / "examples" / "PageParcel-Sample-Page-Text.md"
+OUTPUT = ROOT / "docs" / "examples" / "sample_bundle.zip"
+PAGE_TEXT_OUTPUT = ROOT / "docs" / "examples" / "sample_text.md"
 VERSION = "0.3.0"
 PNG = ROOT / "docs" / "assets" / "pageparcel-sample-page.png"
 

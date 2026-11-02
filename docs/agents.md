@@ -26,7 +26,7 @@ python3 scripts/find_latest_bundle.py --kind text                  # newest Page
 python3 scripts/find_latest_bundle.py --dir ~/Captures --all       # everything in another folder
 ```
 
-It recognizes `PageParcel-*.zip`, `PageParcel-*.md`, and extracted `PageParcel-*/` folders in `~/Downloads` and `~/Desktop`. Some browser-automation tools save downloads under random IDs instead of the suggested name; if so, use the automation tool's download path.
+It recognizes `*_bundle.zip`, `*_text.md`, and extracted `*_bundle/` folders (and older `PageParcel-*` names) in `~/Downloads` and `~/Desktop`. Some browser-automation tools save downloads under random IDs instead of the suggested name; if so, use the automation tool's download path.
 
 ## 4. Verify before use
 

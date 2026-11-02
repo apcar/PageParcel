@@ -15,7 +15,7 @@ This page summarizes how PageParcel is tested and what has and has not been veri
 | `npm run build` | Production Vite build |
 | `scripts/security_audit.py` | Manifest permissions, empty host permissions, CSP, no first-party network APIs, synchronous Defuddle, no OCR assets or dependencies |
 | `scripts/verify_bundle.py --self-test` | The verifier rejects tampered, unsafe, or incomplete bundles |
-| Public sample rebuild | `docs/examples/PageParcel-Sample.zip` rebuilds byte-for-byte and verifies |
+| Public sample rebuild | `docs/examples/sample_bundle.zip` rebuilds byte-for-byte and verifies |
 | Distribution check | The committed `assets/extension-dist` is identical to a fresh build |
 
 ## Public-page capture matrix (Page Text)

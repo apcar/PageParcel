@@ -47,6 +47,12 @@ async function build(d: CapturePackDraft) {
 }
 
 describe('Trace Bundle', () => {
+  it('names the ZIP {date}_{title}_bundle.zip with no PageParcel prefix', async () => {
+    const { pack } = await build(draft());
+    expect(pack.filename).toMatch(/^\d{4}-\d{2}-\d{2}_.+_bundle\.zip$/);
+    expect(pack.filename.startsWith('PageParcel-')).toBe(false);
+  });
+
   it('registers every artifact with its byte count and SHA-256, and reports the extension version', async () => {
     const { files, manifest } = await build(draft());
     expect(manifest.generator).toEqual({ name: 'PageParcel', version: '9.9.9' });
