@@ -4,13 +4,31 @@
   <img src="docs/assets/pageparcel-header.svg" alt="PageParcel — pack the page, keep the record" width="760">
 </p>
 
-**Pack a web page into a portable, verifiable record, on your own machine.**
+**Preserve a web page so a person, or an agent, can inspect what was actually there.**
 
-PageParcel is a Chrome extension that captures what a page looked like and what it said, together. One click on **Save Page** gives you a **Trace Bundle**: lossless full-page screenshots, three Markdown views of the text, source metadata, and a SHA-256 register of every file. Nothing is uploaded, synced, or stored on any server. The files land in your Downloads folder, and a person or an AI agent can open, check, and cite them.
+PageParcel is a Chrome extension that turns a page into one portable record: lossless screenshots, readable and structured Markdown, source context, capture geometry, and a SHA-256 register of the captured files. It runs on your machine, and the extension does not upload page contents. One command, `scripts/verify_bundle.py`, checks saved artifacts against the included hashes.
 
 ## Why I built it
 
-I used CocoShot for years to take full-page screenshots. When I started working alongside AI agents, I wanted something they could invoke. I also wanted every capture to stay on my machine, stored on nobody's server. PageParcel was my first "I can just build things" project, and I use it every day.
+A screenshot shows what a page looked like. It doesn't say what the page said, where it came from, or whether the files have changed since. As more of my work ran alongside AI agents, that gap mattered: structured text makes a page easier to inspect and cite, and I don't want a model's summary standing in for the source.
+
+So I treated a page capture as a record, not just an image. Four design choices follow from that:
+
+- **Provenance travels with the record.** URL, title, language, capture time, geometry, and method sit in `page.json`, next to the files they describe.
+- **Integrity is checkable, not assumed.** Each registered artifact has a byte count and SHA-256 hash, and the verifier rejects anything unregistered, duplicated, or malformed. Hashes show whether files changed; they are not a signature or proof of origin.
+- **Local-first by design.** No account, no server, and no upload endpoint. Files land in your Downloads folder.
+- **Built for people and agents alike.** People and browser-driving agents capture pages through Chrome. The outputs are plain files that a person can open and a script or model can parse, verify, and cite.
+
+PageParcel began as my first "I can just build things" project. I use it every day, and it has a user base of one. It's a small, working example of how I approach systems: keep the evidence, make it checkable, and leave final judgment with a person.
+
+## What it demonstrates
+
+- Treating an everyday tool as **evidence infrastructure**, with outputs that can be checked later.
+- **Designing for agents** without handing them authority: they capture through the same browser UI, read and verify records, and people decide.
+- **Honest scoping.** In 0.3.0 I removed local OCR, cutting the unpacked extension from about 15 MB to about 0.5 MB, and documented exactly what that costs.
+- **Discipline on a small project:** a schema, a verifier, a local CI script, a security audit, and 123 automated tests.
+
+PageParcel is a fork of [OpenScreenShot](https://github.com/pghqdev/OpenScreenShot) (MIT) and keeps its everyday screenshot, annotation, and export tools.
 
 ## PageParcel vs. rolling screenshots
 
