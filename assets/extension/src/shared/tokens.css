@@ -35,8 +35,8 @@
 :root,
 :root[data-theme='light'] {
   --surface-1: #ffffff;
-  --surface-2: #f5f5f7;
-  --surface-3: #ebebed;
+  --surface-2: #f2f2f7;
+  --surface-3: #e5e5ea;
   --text-1: #1d1d1f;
   --text-2: #6e6e73;
   --text-3: #aeaeb2;
@@ -45,6 +45,9 @@
   --accent-pressed: #0068d6;
   --accent-subtle: #e8f4fd;
   --border: #d2d2d7;
+  --border-soft: #e0e0e6;
+  --seg-track: #e3e3e8;
+  --seg-thumb: #ffffff;
   --border-focus: #0071e3;
   --danger: #ff3b30;
   --success: #34c759;
@@ -64,6 +67,9 @@
   --accent-pressed: #0070e0;
   --accent-subtle: #1a3a5c;
   --border: #48484a;
+  --border-soft: #3a3a3c;
+  --seg-track: #1c1c1e;
+  --seg-thumb: #48484a;
   --border-focus: #0a84ff;
   --danger: #ff453a;
   --success: #30d158;

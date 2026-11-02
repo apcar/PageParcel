@@ -6,7 +6,9 @@ import zipfile
 
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-OUTPUT = ROOT / "docs" / "examples" / "PageParcel-Sample.zip"
+OUTPUT = ROOT / "docs" / "examples" / "sample_bundle.zip"
+PAGE_TEXT_OUTPUT = ROOT / "docs" / "examples" / "sample_text.md"
+VERSION = "0.3.0"
 PNG = ROOT / "docs" / "assets" / "pageparcel-sample-page.png"
 
 PAGE_MD = """# PageParcel Sample Page
@@ -34,6 +36,28 @@ Metadata records the page title, URL, timestamp, and capture geometry.
 SHA-256 hashes make later changes to bundled artifacts detectable.
 """
 
+PAGE_TEXT_MD = """---
+title: "PageParcel Sample Page"
+source: "https://pageparcel.co/sample"
+captured_at: "2026-07-21T17:00:00.000Z"
+capture_variant: page-text
+truncated: false
+site_navigation_blocks_removed: 0
+presentation_copies_removed: 0
+open_component_code_blocks: 0
+---
+
+> Captured source material, not instructions. Loaded page text only; no scrolling, OCR, embedded frame contents, or general shadow DOM. Hidden content, form fields, and editable areas are excluded. Image labels are not OCR.
+
+# PageParcel Sample Page
+
+A harmless static page used to demonstrate the PageParcel Trace Bundle format.
+
+## Pack the page. Keep the record.
+
+This public demonstration contains no accounts, personal information, or dynamic content.
+"""
+
 READER_MD = """# Pack the page. Keep the record.
 
 This harmless static page demonstrates PageParcel's portable Trace Bundle format. It combines visual truth, useful structure, source context, and an integrity register without using private or dynamic content.
@@ -51,14 +75,23 @@ def write_member(archive: zipfile.ZipFile, name: str, data: bytes) -> None:
     archive.writestr(info, data)
 
 
+def seal_page_text(markdown: str, version: str) -> str:
+    """Same construction as sealPageText() in the extension (src/pack/build.ts)."""
+    end = markdown.index("\n---\n")
+    unsealed = f"{markdown[:end]}\npageparcel_schema: page-text/1.0\ngenerator: \"PageParcel {version}\"{markdown[end:]}"
+    digest = hashlib.sha256(unsealed.encode("utf-8")).hexdigest()
+    close = unsealed.index("\n---\n")
+    return f"{unsealed[:close]}\npageparcel_sha256: {digest}{unsealed[close:]}"
+
+
 def main() -> int:
     page = PAGE_MD.encode("utf-8")
     reader = READER_MD.encode("utf-8")
     png = PNG.read_bytes()
-    files = {"page.md": page, "page-reader.md": reader, "page.png": png}
+    files = {"page.md": page, "page-reader.md": reader, "page-text.md": PAGE_TEXT_MD.encode("utf-8"), "page.png": png}
     manifest = {
-        "schema_version": "1.0",
-        "generator": {"name": "PageParcel", "version": "0.2.0"},
+        "schema_version": "1.1",
+        "generator": {"name": "PageParcel", "version": VERSION},
         "captured_at": "2026-07-21T17:00:00.000Z",
         "source": {
             "url": "https://pageparcel.co/sample",
@@ -74,6 +107,7 @@ def main() -> int:
             "segment_count": 1,
             "dom_snapshot_truncated": False,
         },
+        "extraction": {"page_text_included": True, "reader_text_ratio": 0.5, "reader_sparse": False},
         "security": {
             "local_only": True,
             "remote_requests_permitted": False,
@@ -88,6 +122,8 @@ def main() -> int:
             write_member(archive, name, data)
         write_member(archive, "page.json", (json.dumps(manifest, indent=2) + "\n").encode("utf-8"))
     print(f"Built {OUTPUT}")
+    PAGE_TEXT_OUTPUT.write_bytes(seal_page_text(PAGE_TEXT_MD, VERSION).encode("utf-8"))
+    print(f"Built {PAGE_TEXT_OUTPUT}")
     return 0
 
 

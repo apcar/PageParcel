@@ -8,15 +8,15 @@
     "description": "Extension description shown in the Chrome Web Store and extensions page."
   },
   "modePack": {
-    "message": "Trace Bundle",
+    "message": "Save Page",
     "description": "Capture mode: create a local portable page record."
   },
   "modePackSub": {
-    "message": "Screenshot + Markdown + metadata + hashes",
+    "message": "Screenshot, text, and proof hashes in one bundle",
     "description": "Subtitle for the Trace Bundle capture mode."
   },
   "modeFullPage": {
-    "message": "Full Page",
+    "message": "Full page image",
     "description": "Capture mode: capture the entire scrolling page."
   },
   "modeFullPageSub": {
@@ -24,7 +24,7 @@
     "description": "Subtitle for the Full Page capture mode."
   },
   "modeVisible": {
-    "message": "Visible Area",
+    "message": "Visible area image",
     "description": "Capture mode: capture what is currently visible."
   },
   "modeVisibleSub": {
@@ -32,7 +32,7 @@
     "description": "Subtitle for the Visible Area capture mode."
   },
   "modeRegion": {
-    "message": "Selected Region",
+    "message": "Select image area",
     "description": "Capture mode: capture a user-dragged region."
   },
   "modeRegionSub": {
@@ -40,51 +40,15 @@
     "description": "Subtitle for the Selected Region capture mode."
   },
   "capturing": {
-    "message": "Capturing\u2026",
+    "message": "Capturing…",
     "description": "Status shown while a capture is in progress."
   },
   "cannotCaptureProtected": {
-    "message": "Can\u2019t screenshot this protected page.",
+    "message": "Can’t screenshot this protected page.",
     "description": "Error shown when the active page cannot be captured (e.g. chrome:// pages)."
   },
-  "comingSoon": {
-    "message": "Coming in a later milestone.",
-    "description": "Placeholder message for features not yet implemented."
-  },
-  "welcomeTitle": {
-    "message": "Welcome to PageParcel!",
-    "description": "Onboarding welcome card title."
-  },
-  "welcomeLede": {
-    "message": "Pack a page into a portable local record, or create screenshots for annotation and PDF export.",
-    "description": "Welcome card description text."
-  },
-  "welcomeList1": {
-    "message": "\ud83d\udce6 Trace Bundle \u2014 Screenshot, Markdown, metadata, and hashes",
-    "description": "Welcome card feature list item 1"
-  },
-  "welcomeList2": {
-    "message": "\ud83d\udcc4 Full Page \u2014 Scroll and stitch the entire page",
-    "description": "Welcome card feature list item 2"
-  },
-  "welcomeList3": {
-    "message": "\ud83d\udc41 Visible or \u2702\ufe0f Region \u2014 Capture only what you need",
-    "description": "Welcome card feature list item 3"
-  },
-  "welcomePerm": {
-    "message": "\ud83d\udd12 Capture processing is local. Password and secret-like form fields are redacted from Markdown.",
-    "description": "Welcome card permission notice."
-  },
-  "welcomeCta": {
-    "message": "Got it, let\u2019s go!",
-    "description": "Primary call-to-action on the welcome card."
-  },
-  "customizeShortcuts": {
-    "message": "Customize keyboard shortcuts",
-    "description": "Link that opens Chrome's extension shortcut settings."
-  },
   "settingsShortcuts": {
-    "message": "Shortcuts",
+    "message": "Keyboard shortcuts",
     "description": "Shortcuts row label in settings."
   },
   "settingsTitle": {
@@ -132,15 +96,15 @@
     "description": "Export quality setting label."
   },
   "settingsFilename": {
-    "message": "Filename template",
+    "message": "File name",
     "description": "Filename template setting label."
   },
   "filenameHint": {
-    "message": "Tokens: {date} {time} {title} {w} {h}",
+    "message": "Used for every file. Tokens: {date}, {time}, {title}, {type}, {w}, and {h}. If {type} is missing, _{type} is added.",
     "description": "Help text for filename template tokens."
   },
   "settingsPdfDefaults": {
-    "message": "PDF defaults",
+    "message": "PDF",
     "description": "PDF defaults section heading."
   },
   "settingsPdfPageSize": {
@@ -180,7 +144,7 @@
     "description": "PDF margin setting label."
   },
   "pdfFullHint": {
-    "message": "Full sizes the page to the image, so these don\u2019t apply.",
+    "message": "Full sizes the page to the image, so these don’t apply.",
     "description": "Hint when Full page size is selected."
   },
   "couldNotReach": {
@@ -194,5 +158,39 @@
   "captureModesAria": {
     "message": "Capture modes",
     "description": "Accessible label for the capture mode buttons."
+  },
+  "modePageText": {
+    "message": "Text only"
+  },
+  "modePageTextSub": {
+    "message": "Markdown"
+  },
+  "sectionJustOnePart": {
+    "message": "Just one part"
+  },
+  "settingsAppearance": {
+    "message": "Appearance"
+  },
+  "settingsSaving": {
+    "message": "Saving"
+  },
+  "shortcutSavePage": {
+    "message": "Save Page"
+  },
+  "changeInChrome": {
+    "message": "Change in Chrome"
+  },
+  "pdfShowOptions": {
+    "message": "Show PDF options"
+  },
+  "pdfOptionsHint": {
+    "message": "Used when the default format is PDF."
+  },
+  "privacyNote": {
+    "message": "Everything is local and runs on your computer. Password fields are redacted from text.",
+    "description": "Small grey line under the popup buttons."
+  },
+  "shortcutNotSet": {
+    "message": "Not set"
   }
 }

@@ -4,3 +4,6 @@ assets/extension/dist/
 release/
 PageParcel-*.zip
 npm-debug.log*
+
+__pycache__/
+*.pyc

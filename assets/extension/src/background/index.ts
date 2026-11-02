@@ -11,7 +11,13 @@
  * After a capture completes, the image is stashed in storage and the editor page
  * is opened in a new tab. Export (download) happens from the editor.
  */
-import type { BackgroundMessage, CaptureMode, PopupMessage, TileSpec } from '../shared/types';
+import type {
+  BackgroundMessage,
+  CaptureMode,
+  CapturePackDraft,
+  PopupMessage,
+  TileSpec,
+} from '../shared/types';
 import { setCapturePackDraft, setLastCapture } from '../shared/storage';
 import { isProtectedUrl } from '../shared/utils';
 import { computeScrollPositions, MAX_CANVAS_HEIGHT_PX } from '../shared/geometry';
@@ -38,7 +44,7 @@ const PAINT_SETTLE_MS = 60;
 
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
-    console.log('[PageParcel] installed — welcome card will show on first popup open.');
+    console.log('[PageParcel] installed — ready.');
   }
 });
 
@@ -64,11 +70,14 @@ async function handleCapture(mode: CaptureMode): Promise<void> {
     broadcast({
       type: 'CAPTURE_ERROR',
       code: 'protected-page',
-      message: "Can't screenshot this protected page.",
+      message: "Can't capture this protected page.",
     });
     return;
   }
   switch (mode) {
+    case 'page-text':
+      await capturePageText(tab);
+      return;
     case 'pack':
       await capturePack(tab);
       return;
@@ -104,6 +113,20 @@ async function execInTab<A extends unknown[], R>(
   return result as Awaited<R>;
 }
 
+/**
+ * The page title for file names. Uses the tab's title and falls back to the
+ * document's own title, so image exports are never left untitled.
+ */
+async function pageTitle(tab: chrome.tabs.Tab): Promise<string> {
+  const fromTab = tab.title?.trim();
+  if (fromTab) return fromTab;
+  try {
+    return (await execInTab(tab.id as number, () => document.title || '', [])).trim();
+  } catch {
+    return '';
+  }
+}
+
 /** Inject a fire-and-forget (void) function; its undefined result is ignored. */
 async function runInTab<A extends unknown[]>(
   tabId: number,
@@ -124,7 +147,7 @@ async function captureVisible(tab: chrome.tabs.Tab): Promise<void> {
   const dataUrl = await captureVisibleTabPng(windowId);
   const width = Math.round(metrics.viewportWidth * metrics.devicePixelRatio);
   const height = Math.round(metrics.viewportHeight * metrics.devicePixelRatio);
-  await handoffToEditor(dataUrl, width, height, 'visible', tab.title ?? '');
+  await handoffToEditor(dataUrl, width, height, 'visible', await pageTitle(tab));
   broadcast({ type: 'CAPTURE_COMPLETE', imageUrl: dataUrl, width, height });
 }
 
@@ -141,7 +164,7 @@ async function captureRegion(tab: chrome.tabs.Tab): Promise<void> {
   const w = Math.round(rect.width * dpr);
   const h = Math.round(rect.height * dpr);
   const dataUrl = await execInTab(tabId, cropTile, [tile, x, y, w, h]);
-  await handoffToEditor(dataUrl, w, h, 'region', tab.title ?? '');
+  await handoffToEditor(dataUrl, w, h, 'region', await pageTitle(tab));
   broadcast({ type: 'CAPTURE_COMPLETE', imageUrl: dataUrl, width: w, height: h });
 }
 
@@ -178,7 +201,9 @@ async function captureFullPage(tab: chrome.tabs.Tab): Promise<void> {
         h: Math.round(metrics.container.height * dpr),
       }
     : null;
-  const canvasWidth = crop ? crop.w : Math.round(metrics.viewportWidth * dpr);
+  const canvasWidth = crop
+    ? crop.w
+    : Math.round((metrics.contentWidth ?? metrics.viewportWidth) * dpr);
 
   // Disable smooth scrolling (but keep fixed elements visible) for the first tile.
   await runInTab(tabId, prepareCapture, []);
@@ -213,13 +238,27 @@ async function captureFullPage(tab: chrome.tabs.Tab): Promise<void> {
   }
 
   const dataUrl = await execInTab(tabId, stitchTiles, [tiles, canvasWidth, canvasHeight, crop]);
-  await handoffToEditor(dataUrl, canvasWidth, canvasHeight, 'full-page', tab.title ?? '');
+  await handoffToEditor(dataUrl, canvasWidth, canvasHeight, 'full-page', await pageTitle(tab));
   broadcast({
     type: 'CAPTURE_COMPLETE',
     imageUrl: dataUrl,
     width: canvasWidth,
     height: canvasHeight,
   });
+}
+
+async function capturePageText(tab: chrome.tabs.Tab): Promise<void> {
+  const snapshot = await execInTab(tab.id as number, collectPageSnapshot, [true]);
+  const key = `pageparcel:text:${crypto.randomUUID()}`;
+  const storage = chrome.storage.local;
+  await storage.set({ [key]: snapshot });
+  try {
+    await chrome.tabs.create({ url: `${EDITOR_URL}#text=${encodeURIComponent(key)}` });
+  } catch (error) {
+    await storage.remove(key);
+    throw error;
+  }
+  broadcast({ type: 'TEXT_COMPLETE' });
 }
 
 async function capturePack(tab: chrome.tabs.Tab): Promise<void> {
@@ -246,6 +285,8 @@ async function capturePack(tab: chrome.tabs.Tab): Promise<void> {
   }
 
   const snapshot = await execInTab(tabId, collectPageSnapshot, []);
+  // A second, text-only snapshot of the same page state feeds page-text.md.
+  const textSnapshot = await execInTab(tabId, collectPageSnapshot, [true]);
   const positions = computeScrollPositions(metrics.scrollHeight, metrics.viewportHeight);
   const windowId = tab.windowId ?? chrome.windows.WINDOW_ID_CURRENT;
   const crop = metrics.container
@@ -256,15 +297,26 @@ async function capturePack(tab: chrome.tabs.Tab): Promise<void> {
         h: Math.round(metrics.container.height * dpr),
       }
     : null;
-  const pageWidth = crop ? crop.w : Math.round(metrics.viewportWidth * dpr);
+  const pageWidth = crop
+    ? crop.w
+    : Math.round((metrics.contentWidth ?? metrics.viewportWidth) * dpr);
   const tileHeight = crop ? crop.h : Math.round(metrics.viewportHeight * dpr);
   const tiles: TileSpec[] = [];
+  let viewportContext: CapturePackDraft['viewportContext'];
 
   await runInTab(tabId, prepareCapture, []);
   try {
     await execInTab(tabId, scrollToPosition, [positions[0]]);
     await delay(PAINT_SETTLE_MS);
     tiles.push({ dataUrl: await captureVisibleTabPng(windowId), y: 0 });
+    if (crop) {
+      // The stitched page is cropped to the scroll container; keep the surrounding app once.
+      viewportContext = {
+        dataUrl: tiles[0].dataUrl,
+        width: Math.round((metrics.windowWidth ?? metrics.viewportWidth) * dpr),
+        height: Math.round((metrics.windowHeight ?? metrics.viewportHeight) * dpr),
+      };
+    }
     broadcast({ type: 'CAPTURE_PROGRESS', percent: Math.round((1 / positions.length) * 85) });
 
     if (positions.length > 1) {
@@ -312,6 +364,8 @@ async function capturePack(tab: chrome.tabs.Tab): Promise<void> {
     pageHeight,
     devicePixelRatio: dpr,
     captureMethod: 'full-page-scroll-stitch',
+    viewportContext,
+    textSnapshot,
   });
   await chrome.tabs.create({ url: PACK_URL });
   broadcast({ type: 'PACK_COMPLETE', segmentCount: segments.length });
@@ -334,6 +388,8 @@ async function handoffToEditor(
 
 function commandToMode(command: string): CaptureMode | null {
   switch (command) {
+    case 'capture-page-text':
+      return 'page-text';
     case 'capture-trace-bundle':
       return 'pack';
     case 'capture-full-page':

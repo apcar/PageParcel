@@ -2,13 +2,13 @@ cff-version: 1.2.0
 message: "If PageParcel supports your work, please cite the software."
 title: "PageParcel"
 type: software
-version: 0.2.0
-date-released: 2026-07-21
+version: 0.3.0
+date-released: 2026-11-01
 authors:
   - family-names: "Greene"
     given-names: "Andrew"
     alias: "apcar"
-repository-code: "https://github.com/apcar/pageparcel"
-url: "https://github.com/apcar/pageparcel"
+repository-code: "https://github.com/apcar/PageParcel"
+url: "https://github.com/apcar/PageParcel"
 license: MIT
-abstract: "A local-first Chrome extension that packages web pages into portable records with screenshots, Markdown, source metadata, and SHA-256 integrity hashes."
+abstract: "A local-first Chrome extension that packages web pages into portable records with screenshots, Markdown, Page Text, source metadata, and SHA-256 integrity hashes."

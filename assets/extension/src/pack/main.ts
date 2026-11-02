@@ -1,6 +1,6 @@
 import './pack.css';
 import { buildCapturePack } from './build';
-import { clearCapturePackDraft, getCapturePackDraft } from '../shared/storage';
+import { clearCapturePackDraft, getCapturePackDraft, getSettings } from '../shared/storage';
 
 const status = document.querySelector<HTMLElement>('#status');
 const details = document.querySelector<HTMLElement>('#details');
@@ -35,7 +35,8 @@ async function main(): Promise<void> {
       details.textContent = `${draft.snapshot.title}\n${draft.segments.length} screenshot segment${draft.segments.length === 1 ? '' : 's'} · ${draft.pageWidth} × ${draft.pageHeight}px`;
     }
     setStatus('Building Markdown, metadata, hashes, and ZIP locally…');
-    const pack = await buildCapturePack(draft);
+    const { filenameTemplate } = await getSettings();
+    const pack = await buildCapturePack(draft, filenameTemplate);
     const blobBytes = Uint8Array.from(pack.bytes);
     const blob = new Blob([blobBytes.buffer], { type: 'application/zip' });
     currentUrl = URL.createObjectURL(blob);

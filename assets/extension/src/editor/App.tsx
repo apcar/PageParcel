@@ -660,6 +660,8 @@ function IconTrash() {
 
 function labelForMode(mode: CaptureMode): string {
   switch (mode) {
+    case 'page-text':
+      return 'Page Text';
     case 'pack':
       return 'Trace Bundle';
     case 'full-page':

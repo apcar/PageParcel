@@ -1,4 +1,11 @@
 async function main(): Promise<void> {
+  if (location.hash.startsWith('#text=')) {
+    document.title = 'PageParcel Page Text';
+    const { pageTextView } = await import('../pack/view');
+    document.body.innerHTML = pageTextView();
+    await import('../pack/text');
+    return;
+  }
   if (location.hash === '#pack') {
     document.title = 'PageParcel Trace Bundle';
     document.body.innerHTML = `

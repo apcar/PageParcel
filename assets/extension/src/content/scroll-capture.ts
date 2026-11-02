@@ -53,6 +53,9 @@ export function getMetrics(): Metrics {
       scrollHeight: scroller.scrollHeight,
       viewportHeight: scroller.clientHeight,
       viewportWidth: scroller.clientWidth,
+      contentWidth: scroller.clientWidth,
+      windowWidth: vw,
+      windowHeight: vh,
       devicePixelRatio: dpr,
       initialScrollY: scroller.scrollTop,
       container: {
@@ -68,6 +71,10 @@ export function getMetrics(): Metrics {
     scrollHeight: de.scrollHeight,
     viewportHeight: vh,
     viewportWidth: vw,
+    // A classic scrollbar takes layout space; clientWidth excludes it.
+    contentWidth: de.clientWidth > 0 && de.clientWidth <= vw ? de.clientWidth : vw,
+    windowWidth: vw,
+    windowHeight: vh,
     devicePixelRatio: dpr,
     initialScrollY: window.scrollY,
     container: null,
@@ -75,7 +82,8 @@ export function getMetrics(): Metrics {
 }
 
 /**
- * Disable smooth scrolling so capture scrolls are instant. Fixed/sticky
+ * Disable smooth scrolling so capture scrolls are instant, and hide overlay
+ * scrollbars that would otherwise repeat in every tile. Fixed/sticky
  * elements are NOT hidden here — the first tile is captured with them visible
  * (so a fixed header appears once at the top) and {@link hideFixedElements}
  * hides them for the remaining tiles.
@@ -86,6 +94,33 @@ export function prepareCapture(): void {
   root.dataset.ccpScrollBehaviorPriority = root.style.getPropertyPriority('scroll-behavior');
   document.documentElement.style.setProperty('scroll-behavior', 'auto', 'important');
   const scroller = document.querySelector<HTMLElement>('[data-oss-scroller="1"]');
+  // Overlay scrollbars (macOS default) take no layout space but are painted into
+  // every tile, so their thumb repeats down the stitched image. Hide them only
+  // when they take no space, so hiding them cannot reflow the page.
+  const rules: string[] = [];
+  if (window.innerWidth === root.clientWidth) {
+    rules.push(
+      'html { scrollbar-width: none !important; }',
+      'html::-webkit-scrollbar { display: none !important; }',
+    );
+  }
+  if (scroller) {
+    const css = getComputedStyle(scroller);
+    const borders =
+      (parseFloat(css.borderLeftWidth) || 0) + (parseFloat(css.borderRightWidth) || 0);
+    if (scroller.offsetWidth - scroller.clientWidth - borders < 1) {
+      rules.push(
+        '[data-oss-scroller="1"] { scrollbar-width: none !important; }',
+        '[data-oss-scroller="1"]::-webkit-scrollbar { display: none !important; }',
+      );
+    }
+  }
+  if (rules.length) {
+    const style = document.createElement('style');
+    style.setAttribute('data-pageparcel-capture-style', '1');
+    style.textContent = rules.join('\n');
+    (document.head || root).append(style);
+  }
   if (scroller) {
     scroller.dataset.ccpScrollBehavior = scroller.style.getPropertyValue('scroll-behavior');
     scroller.dataset.ccpScrollBehaviorPriority =
@@ -136,6 +171,9 @@ export function scrollToPosition(y: number): { scrollY: number; atBottom: boolea
 
 /** Restore the page to its pre-capture state. */
 export function restoreCapture(initialScrollY = 0): void {
+  document
+    .querySelectorAll('style[data-pageparcel-capture-style="1"]')
+    .forEach((el) => el.remove());
   const hidden = document.querySelectorAll('[data-oss-hidden="1"]');
   for (const el of hidden) {
     const htmlEl = el as HTMLElement;

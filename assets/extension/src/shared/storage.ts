@@ -1,5 +1,6 @@
 import type { CapturePackDraft, LastCapture, Settings } from './types';
 import { DEFAULT_SETTINGS } from './types';
+import { LEGACY_DEFAULT_TEMPLATES } from './utils';
 
 const SETTINGS_KEY = 'pageparcel:settings';
 const LAST_CAPTURE_KEY = 'pageparcel:last-capture';
@@ -11,7 +12,17 @@ const LEGACY_LAST_CAPTURE_KEY = 'openscreenshot:last-capture';
 export async function getSettings(): Promise<Settings> {
   const stored = await chrome.storage.local.get([SETTINGS_KEY, LEGACY_SETTINGS_KEY]);
   const partial = (stored[SETTINGS_KEY] ?? stored[LEGACY_SETTINGS_KEY] ?? {}) as Partial<Settings>;
-  return { ...DEFAULT_SETTINGS, ...partial };
+  const merged = { ...DEFAULT_SETTINGS, ...partial } as Settings & { showOnboarding?: unknown };
+  delete merged.showOnboarding;
+  // Older builds saved their default template with every settings write, which
+  // froze it in storage and hid newer defaults. Treat old defaults as unset.
+  if (
+    !merged.filenameTemplate?.trim() ||
+    LEGACY_DEFAULT_TEMPLATES.includes(merged.filenameTemplate)
+  ) {
+    merged.filenameTemplate = DEFAULT_SETTINGS.filenameTemplate;
+  }
+  return merged;
 }
 
 /** Persist a partial settings update, merged with the current values. */

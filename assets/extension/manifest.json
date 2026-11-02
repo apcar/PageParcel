@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "__MSG_extDesc__",
   "default_locale": "en",
   "action": {
@@ -25,7 +25,7 @@
   "permissions": ["activeTab", "scripting", "storage", "unlimitedStorage", "downloads"],
   "host_permissions": [],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'none'; connect-src 'self'; img-src 'self' data: blob:; media-src 'none'; frame-src 'none';"
+    "extension_pages": "default-src 'self'; script-src 'self'; worker-src 'self'; object-src 'none'; connect-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; media-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none';"
   },
   "options_ui": {
     "page": "src/editor/index.html",
@@ -33,20 +33,35 @@
   },
   "commands": {
     "capture-trace-bundle": {
-      "suggested_key": { "default": "Ctrl+Shift+E", "mac": "Command+Shift+E" },
+      "suggested_key": {
+        "default": "Ctrl+Shift+E",
+        "mac": "Command+Shift+E"
+      },
       "description": "Create a local PageParcel Trace Bundle"
     },
     "capture-full-page": {
-      "suggested_key": { "default": "Ctrl+Shift+S", "mac": "Command+Shift+S" },
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
       "description": "Capture the full scrolling page"
     },
     "capture-visible": {
-      "suggested_key": { "default": "Alt+Shift+V", "mac": "Command+Shift+V" },
+      "suggested_key": {
+        "default": "Alt+Shift+V",
+        "mac": "Command+Shift+V"
+      },
       "description": "Capture the visible area"
     },
     "capture-region": {
-      "suggested_key": { "default": "Ctrl+Shift+R", "mac": "Command+Shift+R" },
+      "suggested_key": {
+        "default": "Ctrl+Shift+R",
+        "mac": "Command+Shift+R"
+      },
       "description": "Capture a selected region"
+    },
+    "capture-page-text": {
+      "description": "Save page text as Markdown"
     }
   }
 }

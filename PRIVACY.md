@@ -12,7 +12,9 @@ PageParcel processes information only after you invoke it on the active browser 
 - form labels and values that are safe to preserve; and
 - PageParcel preferences such as theme, export format, and filename pattern.
 
-Password fields and values whose descriptors resemble secrets, tokens, authorization credentials, API keys, or payment cards are redacted from generated Markdown. PageParcel cannot reliably remove sensitive information that is already visible in screenshot pixels.
+Password fields, hidden inputs, and values whose name or label resembles a secret, token, authorization credential, API key, payment card, one-time code, SSN, or bank account number are redacted from generated Markdown. Editable areas (drafts, comment boxes, rich-text editors) are excluded from all Markdown outputs. Detection is heuristic.
+
+Screenshots are never redacted: whatever is painted on screen during capture, including typed values, drafts, messages, and notifications, appears in the PNG files. Password fields appear only as their masking characters. Review the page before capturing, or use Page Text when the output must not contain imagery.
 
 ## Where data goes
 
@@ -35,3 +37,5 @@ Review a page before capturing it. Treat downloaded output according to the sens
 ## Changes and questions
 
 Material privacy changes will be documented in the changelog and reviewed as security-sensitive changes. Questions may be opened as a GitHub issue. Potential vulnerabilities should be submitted through GitHub's private vulnerability reporting rather than a public issue.
+
+Visible preformatted code in open web components can be included as plain source text. Hidden copies, closed details content, form/editable fields, controls, scripts, and styles are excluded from that extraction. General shadow content, closed roots, and embedded frames remain outside this capture.

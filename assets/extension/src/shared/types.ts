@@ -4,7 +4,7 @@
  */
 
 /** Capture modes offered in the popup. */
-export type CaptureMode = 'pack' | 'full-page' | 'visible' | 'region';
+export type CaptureMode = 'pack' | 'page-text' | 'full-page' | 'visible' | 'region';
 
 // --- Popup → Background (capture requests) -------------------------------
 
@@ -44,7 +44,8 @@ export interface CaptureError {
   message: string;
 }
 
-export type PopupMessage = CaptureProgress | CaptureComplete | PackComplete | CaptureError;
+export type PopupMessage =
+  CaptureProgress | CaptureComplete | PackComplete | { type: 'TEXT_COMPLETE' } | CaptureError;
 
 // --- Capture geometry (in-page measurement results) -----------------------
 
@@ -52,6 +53,14 @@ export interface Metrics {
   scrollHeight: number;
   viewportHeight: number;
   viewportWidth: number;
+  /**
+   * CSS-px width of the scrolled content, excluding a classic (space-taking)
+   * scrollbar. Full-page tiles are cropped to this width.
+   */
+  contentWidth?: number;
+  /** CSS-px size of the browser viewport (the full captureVisibleTab frame). */
+  windowWidth?: number;
+  windowHeight?: number;
   devicePixelRatio: number;
   initialScrollY: number;
   /**
@@ -63,6 +72,7 @@ export interface Metrics {
 }
 
 export interface PageSnapshot {
+  shadowCodeBlocks?: number;
   title: string;
   url: string;
   language: string;
@@ -84,6 +94,13 @@ export interface CapturePackDraft {
   pageHeight: number;
   devicePixelRatio: number;
   captureMethod: 'full-page-scroll-stitch';
+  /**
+   * When an inner element scrolls, the uncropped first viewport, which shows the
+   * surrounding app chrome (headers, sidebars) that the stitched page omits.
+   */
+  viewportContext?: { dataUrl: string; width: number; height: number };
+  /** Faithful Page Text snapshot taken during the same capture, for page-text.md. */
+  textSnapshot?: PageSnapshot;
 }
 
 /** A rectangle in CSS pixels (viewport-relative for region select). */
@@ -125,7 +142,6 @@ export interface Settings {
   pdfMarginMm: number;
   quality: number; // 0..1, JPEG/WebP/PDF quality
   filenameTemplate: string;
-  showOnboarding: boolean;
   // Annotation style (remembered across sessions)
   annotationColor: string;
   annotationStrokeWidth: number;
@@ -134,14 +150,13 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   defaultFormat: 'png',
-  theme: 'system',
+  theme: 'light',
   pdfPageSize: 'a4',
   pdfOrientation: 'portrait',
   pdfMultiPage: true,
   pdfMarginMm: 8,
   quality: 0.92,
-  filenameTemplate: 'screenshot_{date}_{time}',
-  showOnboarding: true,
+  filenameTemplate: '{date}_{title}_{type}',
   annotationColor: '#ff3b30',
   annotationStrokeWidth: 6,
   annotationFontSize: 28,
