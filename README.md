@@ -45,7 +45,7 @@ The popup has one main button and four smaller options.
 
 The other three image modes keep their keyboard shortcuts (⌘⇧S, ⌘⇧V, and ⌘⇧R on a Mac), but only the Save Page shortcut is shown in the popup. Change any of them at `chrome://extensions/shortcuts`. Text only has no default shortcut.
 
-For example, Save Page on the Sallie Mae Wikipedia article on November 1, 2026 saves `2026-11-01_Sallie Mae - Wikipedia_bundle.zip`. Below the buttons, the popup shows one line: "Everything stays on your computer. Password fields are redacted from text." Screenshots are not redacted (see Security).
+For example, Save Page on the Sallie Mae Wikipedia article on November 1, 2026 saves `2026-11-01_Sallie Mae - Wikipedia_bundle.zip`. Below the buttons, the popup shows one line: "Everything is local and runs on your computer. Password fields are redacted from text." Screenshots are not redacted (see Security).
 
 ## Settings
 

@@ -187,7 +187,7 @@
     "message": "Used when the default format is PDF."
   },
   "privacyNote": {
-    "message": "Everything stays on your computer. Password fields are redacted from text.",
+    "message": "Everything is local and runs on your computer. Password fields are redacted from text.",
     "description": "Small grey line under the popup buttons."
   }
 }
