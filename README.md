@@ -170,7 +170,7 @@ Password fields show only their masking dots, but nothing else is hidden. Review
 
 - Dynamic pages can change while a full-page capture scrolls.
 - Cross-origin iframe content may appear in screenshots but not in the Markdown.
-- Text inside images and canvases is not extracted. It stays visible in the screenshots, where an AI or OCR tool can read it.
+- **Text only** does not extract text from images, canvases, or scanned content. Earlier builds had optional local OCR for this, and it was removed in 0.3.0 to keep the extension small. A Text only file can therefore miss words that appear only inside pictures. That text still shows in screenshots, so use **Save Page** or an image capture and a separate OCR or AI tool when you need it.
 - Virtualized or not-yet-loaded content is not fetched.
 - Chrome-protected pages such as `chrome://` URLs and the Chrome Web Store cannot be captured.
 

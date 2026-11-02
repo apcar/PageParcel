@@ -6,7 +6,7 @@ All notable changes to PageParcel are documented here.
 
 ### Removed
 
-- **Local OCR.** The opt-in Page Text OCR option, its Tesseract.js engine, and its English data are gone before release. This drops about 14.8 MB from the extension and removes `'wasm-unsafe-eval'` from the content security policy. Text inside images stays in the screenshots, where any AI or OCR tool can read it.
+- **Local OCR.** The opt-in Page Text OCR option, its Tesseract.js engine, and its English data are gone before release. This drops about 14.8 MB from the extension and removes `'wasm-unsafe-eval'` from the content security policy. This is a real loss of capability: **Text only** (Page Text) no longer extracts text from images, canvases, or scanned content, so a Text only file can miss words that appear only inside pictures. Screenshots still show that text, so use **Save Page** or an image capture when it matters, and read it with a separate OCR or AI tool.
 
 ### Added
 
