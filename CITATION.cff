@@ -3,7 +3,7 @@ message: "If PageParcel supports your work, please cite the software."
 title: "PageParcel"
 type: software
 version: 0.3.0
-date-released: 2026-10-21
+date-released: 2026-11-01
 authors:
   - family-names: "Greene"
     given-names: "Andrew"
