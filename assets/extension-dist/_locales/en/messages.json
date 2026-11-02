@@ -189,5 +189,8 @@
   "privacyNote": {
     "message": "Everything is local and runs on your computer. Password fields are redacted from text.",
     "description": "Small grey line under the popup buttons."
+  },
+  "shortcutNotSet": {
+    "message": "Not set"
   }
 }

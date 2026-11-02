@@ -39,6 +39,7 @@ import type { LastCapture, Settings } from '../shared/types';
 import { DEFAULT_SETTINGS } from '../shared/types';
 import { getLastCapture, getSettings, setSettings } from '../shared/storage';
 import { formatFilename } from '../shared/utils';
+import { watchTheme } from '../shared/theme';
 import { canvasToDataUrl, downloadDataUrl, withExtension, type ImageFormat } from './export';
 import { exportPdf as exportPdfFile, type PdfOptions } from './pdf';
 
@@ -85,6 +86,7 @@ export function useEditor() {
   const [cropDraft, setCropDraft] = useState<Rect | null>(null);
   const [spaceHeld, setSpaceHeld] = useState(false);
   const [settings, setSettingsState] = useState<Settings | null>(null);
+  useEffect(() => watchTheme(settings?.theme ?? DEFAULT_SETTINGS.theme), [settings?.theme]);
   const [exporting, setExporting] = useState(false);
   const [style, setStyle] = useState<AnnotationStyle>(DEFAULT_STYLE);
 
@@ -244,7 +246,6 @@ export function useEditor() {
     void (async () => {
       const s = await getSettings();
       setSettingsState(s);
-      applyTheme(s.theme);
       setStyle({
         color: s.annotationColor,
         strokeWidth: s.annotationStrokeWidth,
@@ -784,10 +785,4 @@ function hitTestAnnotation(
 export function isTypingTarget(t: EventTarget | null): boolean {
   const el = t as HTMLElement | null;
   return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
-}
-
-function applyTheme(theme: Settings['theme']): void {
-  const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
-  const dark = theme === 'dark' || (theme === 'system' && prefersDark);
-  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
 }

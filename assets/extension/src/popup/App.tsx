@@ -4,6 +4,7 @@ import type { CaptureMode, ExportFormat, PopupMessage, Settings } from '../share
 import { DEFAULT_SETTINGS } from '../shared/types';
 import { getSettings, setSettings } from '../shared/storage';
 import { onPopupMessage, sendToBackground } from '../shared/messaging';
+import { watchTheme } from '../shared/theme';
 
 // i18n helper
 function t(id: string): string {
@@ -38,11 +39,6 @@ const SECONDARY: {
 
 const SAVE_PAGE_COMMAND = 'capture-trace-bundle';
 
-/** Shown when Chrome reports no binding; matches the manifest's suggested key. */
-function fallbackShortcut(): string {
-  return /Mac/i.test(navigator.platform || navigator.userAgent) ? '⌘⇧E' : 'Ctrl+Shift+E';
-}
-
 export function App() {
   const [settings, setSettingsState] = useState<Settings>(DEFAULT_SETTINGS);
   const [showSettings, setShowSettings] = useState(false);
@@ -50,13 +46,14 @@ export function App() {
   const [progress, setProgress] = useState<number | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [shortcuts, setShortcuts] = useState<Record<string, string>>({});
-  const saveShortcut = shortcuts[SAVE_PAGE_COMMAND] || fallbackShortcut();
+  const saveShortcut = shortcuts[SAVE_PAGE_COMMAND] || '';
+
+  useEffect(() => watchTheme(settings.theme), [settings.theme]);
 
   // Load settings + apply theme on mount.
   useEffect(() => {
     void getSettings().then((s) => {
       setSettingsState(s);
-      applyTheme(s.theme);
     });
     // Actual (possibly user-remapped) bindings, formatted per platform by Chrome.
     void chrome.commands.getAll().then((cmds) => {
@@ -99,7 +96,6 @@ export function App() {
   async function updateSettings(patch: Partial<Settings>) {
     const next = await setSettings(patch);
     setSettingsState(next);
-    if (patch.theme) applyTheme(next.theme);
   }
 
   function capture(mode: CaptureMode) {
@@ -172,7 +168,7 @@ export function App() {
                   : t('modePackSub')}
               </span>
             </span>
-            <kbd class="primary-kbd">{saveShortcut}</kbd>
+            {saveShortcut ? <kbd class="primary-kbd">{saveShortcut}</kbd> : null}
             {busy === 'pack' && progress != null ? (
               <div class="progress" aria-hidden="true">
                 <div class="progress-fill" style={{ width: `${progress}%` }} />
@@ -364,7 +360,7 @@ function SettingsView({
               type="range"
               min="0.1"
               max="1"
-              step="0.05"
+              step="0.01"
               value={settings.quality}
               onInput={(e) => onChange({ quality: Number((e.target as HTMLInputElement).value) })}
             />
@@ -400,7 +396,7 @@ function SettingsView({
       <div class="card">
         <div class="card-row">
           <span>
-            {t('shortcutSavePage')} <span class="value">{shortcut}</span>
+            {t('shortcutSavePage')} <span class="value">{shortcut || t('shortcutNotSet')}</span>
           </span>
           <button class="link-btn" onClick={openShortcutSettings}>
             {t('changeInChrome')} ›
@@ -532,10 +528,4 @@ function BackMark() {
       <path d="M19 12H5M12 19l-7-7 7-7" />
     </svg>
   );
-}
-
-function applyTheme(theme: Settings['theme']) {
-  const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
-  const dark = theme === 'dark' || (theme === 'system' && prefersDark);
-  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
 }

@@ -4,6 +4,13 @@ All notable changes to PageParcel are documented here.
 
 ## 0.3.0 - 2026-11-01
 
+### Fixed
+
+- The popup shows only shortcuts actually assigned in Chrome, with "Not set" in Settings when Save Page has no binding.
+- Image quality adjusts in 1% steps so the 92% default can be restored after a change.
+- System theme follows macOS appearance changes while the popup or editor remains open.
+- Releases use the reviewed, versioned release notes instead of generated notes.
+
 ### Removed
 
 - **Local OCR.** The opt-in Page Text OCR option, its Tesseract.js engine, and its English data are gone before release. This drops about 14.8 MB from the extension and removes `'wasm-unsafe-eval'` from the content security policy. This is a real loss of capability: **Text only** (Page Text) no longer extracts text from images, canvases, or scanned content, so a Text only file can miss words that appear only inside pictures. Screenshots still show that text, so use **Save Page** or an image capture when it matters, and read it with a separate OCR or AI tool.
